@@ -9,6 +9,8 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 from app.api import audit as audit_router
 from app.api import auth as auth_router
 from app.api import consent as consent_router
+from app.api import recordings as recordings_router
+from app.services import storage
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 
@@ -22,6 +24,10 @@ REQUESTS = Counter("vcapp_requests_total", "Total HTTP requests", ["path"])
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     log.info("app.start", env=settings.app_env)
+    try:
+        storage.ensure_buckets()
+    except Exception as e:
+        log.warning("storage.bootstrap_failed", error=str(e))
     yield
     log.info("app.stop")
 
@@ -46,6 +52,7 @@ if settings.cors_origins_list:
 app.include_router(auth_router.router)
 app.include_router(consent_router.router)
 app.include_router(audit_router.router)
+app.include_router(recordings_router.router)
 
 
 @app.get("/health")

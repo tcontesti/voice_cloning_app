@@ -30,6 +30,16 @@ class Settings(BaseSettings):
     minio_port: int = 9000
     minio_root_user: str = "vcapp"
     minio_root_password: str = ""
+    minio_bucket_recordings: str = "recordings"
+    minio_bucket_syntheses: str = "syntheses"
+
+    kms_mode: str = "mock"
+    kms_mock_key: str = "ZGV2LWtleS0zMi1ieXRlcy1tdXN0LWJlLWxvbmctZW5vdWdoLW9rPT0="
+
+    # SSE-C requires HTTPS to MinIO. Enable in prod with TLS termination
+    # in front of MinIO; "none" is for dev only.
+    storage_encryption: str = "none"
+    minio_secure: bool = False
 
     cors_allowed_origins: str = ""
 
