@@ -13,12 +13,18 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "vue": "^3.5.13",
-    "vue-router": "^4.5.0",
+    "@fontsource-variable/inter-tight": "^5.2.7",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/source-serif-4": "^5.2.9",
+    "@vueuse/core": "^14.2.1",
+    "lucide-vue-next": "^0.469.0",
+    "motion-v": "^2.2.1",
     "pinia": "^2.3.0",
+    "tailwindcss-animate": "^1.0.7",
+    "vue": "^3.5.13",
     "vue-i18n": "^10.0.5",
-    "wavesurfer.js": "^7.8.16",
-    "lucide-vue-next": "^0.469.0"
+    "vue-router": "^4.5.0",
+    "wavesurfer.js": "^7.8.16"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",
