@@ -21,8 +21,15 @@ fi
 export PYTHONPATH="$APP_ROOT/backend:${PYTHONPATH:-}"
 export VC_SCRIPTS_DIR="$SCRIPTS_DIR"
 
-# Spark dev runs services on localhost; override RABBITMQ_HOST/REDIS_HOST/POSTGRES_HOST
-# in the environment if running on a different host than the docker stack.
+# Native-on-Spark override: the sourced .env uses Docker-internal hostnames
+# (rabbitmq, redis, minio, postgres) that only resolve inside the compose
+# network. Workers run outside Docker, so point them at the host's loopback
+# where the compose stack publishes its ports. Override per-var if needed
+# (e.g. for DB on another host) by exporting before invoking this script.
+export RABBITMQ_HOST="${RABBITMQ_HOST_OVERRIDE:-localhost}"
+export REDIS_HOST="${REDIS_HOST_OVERRIDE:-localhost}"
+export MINIO_HOST="${MINIO_HOST_OVERRIDE:-localhost}"
+export POSTGRES_HOST="${POSTGRES_HOST_OVERRIDE:-localhost}"
 exec "$VENV/bin/celery" -A app.workers.celery_app worker \
     --loglevel=info \
     --concurrency=1 \
