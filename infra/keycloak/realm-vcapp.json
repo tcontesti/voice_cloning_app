@@ -1,0 +1,53 @@
+{
+  "realm": "vcapp",
+  "enabled": true,
+  "accessTokenLifespan": 28800,
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "roles": {
+    "realm": [
+      {"name": "paciente"},
+      {"name": "clinico"},
+      {"name": "admin"},
+      {"name": "auditor"}
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "vcapp-frontend",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["http://localhost:5173/*", "https://localhost/*"],
+      "webOrigins": ["http://localhost:5173", "https://localhost", "+"]
+    }
+  ],
+  "users": [
+    {
+      "username": "paciente@hsll.es", "email": "paciente@hsll.es",
+      "enabled": true, "emailVerified": true,
+      "credentials": [{"type": "password", "value": "paciente", "temporary": false}],
+      "realmRoles": ["paciente"]
+    },
+    {
+      "username": "clinico@hsll.es", "email": "clinico@hsll.es",
+      "enabled": true, "emailVerified": true,
+      "credentials": [{"type": "password", "value": "clinico", "temporary": false}],
+      "realmRoles": ["clinico"]
+    },
+    {
+      "username": "admin@hsll.es", "email": "admin@hsll.es",
+      "enabled": true, "emailVerified": true,
+      "credentials": [{"type": "password", "value": "admin", "temporary": false}],
+      "realmRoles": ["admin"]
+    },
+    {
+      "username": "auditor@hsll.es", "email": "auditor@hsll.es",
+      "enabled": true, "emailVerified": true,
+      "credentials": [{"type": "password", "value": "auditor", "temporary": false}],
+      "realmRoles": ["auditor"]
+    }
+  ]
+}

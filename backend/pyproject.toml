@@ -27,6 +27,7 @@ dependencies = [
     "celery[amqp]>=5.4",
     "redis>=5.2",
     "websockets>=14.1",
+    "hvac>=2.3",
 ]
 
 [project.optional-dependencies]

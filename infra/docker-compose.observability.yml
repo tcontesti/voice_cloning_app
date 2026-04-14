@@ -1,0 +1,76 @@
+# Observability stack — activate with:
+#   docker compose -f infra/docker-compose.yml \
+#                  -f infra/docker-compose.override.dev.yml \
+#                  -f infra/docker-compose.observability.yml \
+#                  --env-file .env up -d
+# Or use `make observe` (see Makefile).
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - promdata:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    ports: ["9090:9090"]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    depends_on: [prometheus, loki]
+    ports: ["3001:3000"]
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.3.2
+    command: ["-config.file=/etc/loki/config.yml"]
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/config.yml:ro
+      - lokidata:/loki
+    ports: ["3100:3100"]
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.3.2
+    command: ["-config.file=/etc/promtail/config.yml"]
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - promtaildata:/tmp
+    depends_on: [loki]
+    restart: unless-stopped
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.16.0
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: unless-stopped
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.66.0
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    depends_on:
+      redis: {condition: service_healthy}
+    restart: unless-stopped
+
+volumes:
+  promdata:
+  grafanadata:
+  lokidata:
+  promtaildata:

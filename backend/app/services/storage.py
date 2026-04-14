@@ -25,14 +25,53 @@ from minio.sse import SseCustomerKey
 from app.core.config import get_settings
 
 
-def _master_key() -> bytes:
-    s = get_settings()
-    if s.kms_mode != "mock":
-        raise RuntimeError(f"unsupported KMS mode {s.kms_mode}; Vault arrives in M8")
-    raw = base64.b64decode(s.kms_mock_key)
+_master_key_cache: bytes | None = None
+
+
+def _master_key_mock() -> bytes:
+    raw = base64.b64decode(get_settings().kms_mock_key)
     if len(raw) < 32:
         raise RuntimeError("KMS_MOCK_KEY must decode to >= 32 bytes")
     return raw[:32]
+
+
+def _master_key_vault() -> bytes:
+    """Fetch+cache the master key from Vault KV v2 at secret/data/vcapp/master.
+
+    For transit-only deployments, replace this with `client.secrets.transit.*`.
+    Cached for the process lifetime; rotation requires restart (acceptable
+    at our scale; M8+ script can trigger SIGHUP to reload).
+    """
+    import hvac
+
+    s = get_settings()
+    if not s.vault_addr or not s.vault_token:
+        raise RuntimeError("VAULT_ADDR and VAULT_TOKEN must be set for kms_mode=vault")
+    client = hvac.Client(url=s.vault_addr, token=s.vault_token)
+    if not client.is_authenticated():
+        raise RuntimeError("Vault authentication failed")
+    resp = client.secrets.kv.v2.read_secret_version(path="vcapp/master", raise_on_deleted_version=True)
+    b64 = resp["data"]["data"].get("key")
+    if not b64:
+        raise RuntimeError("Vault secret/data/vcapp/master missing 'key' field (base64, >=32 bytes)")
+    raw = base64.b64decode(b64)
+    if len(raw) < 32:
+        raise RuntimeError("Vault master key must decode to >= 32 bytes")
+    return raw[:32]
+
+
+def _master_key() -> bytes:
+    global _master_key_cache
+    if _master_key_cache is not None:
+        return _master_key_cache
+    mode = get_settings().kms_mode
+    if mode == "mock":
+        _master_key_cache = _master_key_mock()
+    elif mode == "vault":
+        _master_key_cache = _master_key_vault()
+    else:
+        raise RuntimeError(f"unsupported KMS mode: {mode}")
+    return _master_key_cache
 
 
 def derive_dek(s3_key: str) -> SseCustomerKey:

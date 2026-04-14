@@ -1,0 +1,98 @@
+# vcapp Helm values. Adjust for Spark on-prem deployment.
+
+image:
+  backend:
+    repository: registry.hsll.es/vcapp/backend
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  frontend:
+    repository: registry.hsll.es/vcapp/frontend
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+
+replicaCount:
+  backend: 2        # stateless
+  frontend: 2
+
+backend:
+  resources:
+    requests: {cpu: "250m", memory: "512Mi"}
+    limits:   {cpu: "2",    memory: "2Gi"}
+  env:
+    APP_ENV: prod
+    APP_LOG_LEVEL: INFO
+    AUTH_MODE: keycloak
+    KMS_MODE: vault
+    STORAGE_ENCRYPTION: sse-c
+    MINIO_SECURE: "true"
+    OIDC_ISSUER: "https://sso.hsll.es/realms/vcapp"
+    OIDC_AUDIENCE: "vcapp-frontend"
+    OIDC_JWKS_URL: "https://sso.hsll.es/realms/vcapp/protocol/openid-connect/certs"
+    VAULT_ADDR: "https://vault.hsll.es:8200"
+    # VAULT_TOKEN injected via secretRef
+    # POSTGRES_*, REDIS_*, RABBITMQ_*, MINIO_* injected from externalSecrets or bitnami deps
+
+# Celery workers run NATIVELY on the Spark (systemd --user), not in Kubernetes.
+# See worker/README.md. This chart deploys only the API + nginx + frontend.
+workers:
+  deployInCluster: false
+  note: "Workers run on Spark via systemd — not managed by this chart"
+
+ingress:
+  enabled: true
+  className: nginx
+  host: vcapp.hsll.es
+  tls:
+    secretName: vcapp-tls
+    # cert-manager issuer for ACME or internal CA
+
+resources:
+  frontend:
+    requests: {cpu: "50m",  memory: "64Mi"}
+    limits:   {cpu: "200m", memory: "256Mi"}
+
+# Sub-charts
+postgresql:
+  enabled: true
+  auth:
+    username: vcapp
+    database: vcapp
+    existingSecret: vcapp-postgres-auth
+  primary:
+    persistence: {enabled: true, size: 50Gi}
+
+redis:
+  enabled: true
+  auth:
+    existingSecret: vcapp-redis-auth
+    existingSecretPasswordKey: redis-password
+  architecture: standalone
+  master:
+    persistence: {enabled: true, size: 8Gi}
+
+rabbitmq:
+  enabled: true
+  auth:
+    existingPasswordSecret: vcapp-rabbit-auth
+  persistence: {enabled: true, size: 10Gi}
+
+minio:
+  enabled: true
+  mode: standalone
+  auth:
+    existingSecret: vcapp-minio-auth
+  persistence: {enabled: true, size: 200Gi}
+  # TLS for SSE-C (required in prod)
+  tls:
+    enabled: true
+    existingSecret: vcapp-minio-tls
+
+# Observability (uses kube-prometheus-stack elsewhere)
+serviceMonitor:
+  enabled: true
+  interval: 30s
+
+# External dependencies expected in cluster (not deployed here)
+externalDependencies:
+  keycloak: "https://sso.hsll.es"
+  vault: "https://vault.hsll.es:8200"

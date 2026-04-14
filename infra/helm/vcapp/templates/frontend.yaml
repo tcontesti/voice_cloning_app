@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "vcapp.fullname" . }}-frontend
+  labels: {{- include "vcapp.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount.frontend }}
+  selector:
+    matchLabels: {{- include "vcapp.frontend.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "vcapp.frontend.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101          # nginx in nginxinc/nginx-unprivileged
+        fsGroup: 101
+      containers:
+        - name: frontend
+          image: "{{ .Values.image.frontend.repository }}:{{ .Values.image.frontend.tag }}"
+          imagePullPolicy: {{ .Values.image.frontend.pullPolicy }}
+          ports: [{name: http, containerPort: 8080}]
+          resources: {{- toYaml .Values.resources.frontend | nindent 12 }}
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 5
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: cache, mountPath: /var/cache/nginx}
+            - {name: run, mountPath: /var/run}
+      volumes:
+        - {name: cache, emptyDir: {}}
+        - {name: run, emptyDir: {}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "vcapp.fullname" . }}-frontend
+  labels: {{- include "vcapp.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports: [{port: 8080, targetPort: http, name: http}]
+  selector: {{- include "vcapp.frontend.selectorLabels" . | nindent 4 }}
+{{- if .Values.ingress.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "vcapp.fullname" . }}
+  labels: {{- include "vcapp.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "25m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/websocket-services: "{{ include "vcapp.fullname" . }}-backend"
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  tls:
+    - hosts: [{{ .Values.ingress.host | quote }}]
+      secretName: {{ .Values.ingress.tls.secretName }}
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+          - path: /api/
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "vcapp.fullname" . }}-backend
+                port: {number: 8000}
+          - path: /ws/
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "vcapp.fullname" . }}-backend
+                port: {number: 8000}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "vcapp.fullname" . }}-frontend
+                port: {number: 8080}
+{{- end }}

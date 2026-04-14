@@ -1,0 +1,27 @@
+apiVersion: v2
+name: vcapp
+description: Voice Cloning App — Hospital Son Llatzer (on-prem clinical TTS)
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords: [voice-cloning, clinical, on-prem, hospital]
+home: https://github.com/hsll/vcapp
+maintainers:
+  - name: Clinical AI — Hospital Son Llatzer
+dependencies:
+  - name: postgresql
+    version: "16.4.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: postgresql.enabled
+  - name: redis
+    version: "20.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: redis.enabled
+  - name: rabbitmq
+    version: "15.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: rabbitmq.enabled
+  - name: minio
+    version: "15.x.x"
+    repository: https://charts.bitnami.com/bitnami
+    condition: minio.enabled

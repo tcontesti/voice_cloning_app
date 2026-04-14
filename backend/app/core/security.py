@@ -44,6 +44,15 @@ def create_access_token(*, user_id: UUID, email: str, role: str) -> str:
 
 
 def decode_token(token: str) -> dict[str, Any]:
+    """Validate a token using the configured auth mode.
+
+    AUTH_MODE=mock      → HS256 with APP_SECRET_KEY (dev / fallback).
+    AUTH_MODE=keycloak  → RS256 verified against Keycloak JWKS.
+    """
+    mode = get_settings().auth_mode
+    if mode == "keycloak":
+        from app.core.oidc import decode_oidc
+        return decode_oidc(token)
     try:
         return jwt.decode(token, get_settings().app_secret_key, algorithms=[ALGORITHM])
     except JWTError as e:
