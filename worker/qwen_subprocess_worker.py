@@ -31,6 +31,13 @@ import traceback
 from pathlib import Path
 from uuid import uuid4
 
+# qwen_tts / transformers prints banners and warnings to stdout (e.g.
+# "Warning: flash-attn is not installed ..."), which would corrupt the
+# JSON-line protocol. Redirect stdout → stderr during imports and restore
+# it only for _emit().
+_real_stdout = sys.stdout
+sys.stdout = sys.stderr
+
 # Apply Qwen-specific patches (transformers 5 shims) before any qwen import.
 _SCRIPTS = os.environ.get("VC_SCRIPTS_DIR", "/home/husll-spark-01/voice_cloning/scripts")
 if _SCRIPTS not in sys.path:
@@ -42,13 +49,18 @@ import soundfile as sf  # noqa: E402
 import torch  # noqa: E402
 from qwen_tts import Qwen3TTSModel  # noqa: E402
 
+# Keep stdout pointed at stderr by default; only _emit() writes to the real
+# stdout pipe. This insulates the JSON protocol from every print() inside
+# qwen_tts / transformers (banners, progress, deprecation warnings, etc.).
+sys.stdout = sys.stderr
+
 MODEL_ID = os.environ.get("VC_QWEN_MODEL", "Qwen/Qwen3-TTS-12Hz-0.6B-Base")
 TMPDIR = Path(os.environ.get("VC_TMPDIR", "/tmp"))
 
 
 def _emit(obj: dict) -> None:
-    sys.stdout.write(json.dumps(obj, separators=(",", ":")) + "\n")
-    sys.stdout.flush()
+    _real_stdout.write(json.dumps(obj, separators=(",", ":")) + "\n")
+    _real_stdout.flush()
 
 
 def _load_model() -> Qwen3TTSModel:

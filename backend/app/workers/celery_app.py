@@ -45,10 +45,7 @@ celery_app.conf.update(
         Queue("synth.omnivoice",  Exchange("synth", type="direct"), routing_key="synth.omnivoice"),
         Queue("synth.qwen3tts",   Exchange("synth", type="direct"), routing_key="synth.qwen3tts"),
     ),
-    task_routes={
-        "app.workers.tasks.synthesize": lambda name, args, kwargs, options, task=None, **kw: {
-            "queue": f"synth.{kwargs.get('model', 'chatterbox')}",
-            "routing_key": f"synth.{kwargs.get('model', 'chatterbox')}",
-        },
-    },
+    # Callers always pass queue=synth.<model> explicitly in send_task(...),
+    # so no task_routes map is needed. Celery 5.6 rejects lambda-valued
+    # task_routes entries with `TypeError: 'function' object is not iterable`.
 )

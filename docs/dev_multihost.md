@@ -83,6 +83,23 @@ Desde el navegador en `http://localhost:5173` → login con `paciente@hsll.es / 
 
 **Frontend no ve la API** — comprueba `VITE_API_BASE=http://localhost:8000` en `frontend\.env.local` (o déjalo vacío, el proxy Vite va por defecto a `localhost:8000`).
 
+## Gate VRAM relajado a 10 GB (solo dev multi-host)
+
+En la Spark GB10 la memoria es **unificada** (121.7 GB total compartidos entre CPU y GPU). MedGemma 27B + DermApixel + otros ocupan ~69 GB de forma permanente, dejando típicamente **~30-50 GB libres**. El gate original de "40 GB libres" del plan v0.2 no aplica en este modo porque:
+
+- Peak real con los 3 modelos simultáneamente cargados: Chatterbox 3.6 + OmniVoice 4 + Qwen3 5 = **~12.7 GB**.
+- LRU residente (`UNLOAD_AFTER_S=600`) + Celery `prefetch=1` + 3 testers ⇒ concurrencia efectiva ~1-2 modelos a la vez, **<10 GB** en uso real.
+- El gate estricto solo cobra sentido cuando hay despliegue hospitalario con carga concurrente real.
+
+**Política dev multi-host:** mínimo **10 GB libres** antes de arrancar los 3 workers. Comprobar con:
+
+```bash
+source ~/voice_cloning_env/.venv/bin/activate
+python -c "import torch; free,total=torch.cuda.mem_get_info(); print(f'{free/1024**3:.1f} GB libres / {total/1024**3:.1f} GB')"
+```
+
+Si <10 GB: arrancar solo Chatterbox (más liviano) y dejar Omni/Qwen3 hasta que se libere otra carga del sistema.
+
 ## Notas de seguridad del piloto
 
 - Credenciales en `.env.multihost` — gitignored, no commitear.

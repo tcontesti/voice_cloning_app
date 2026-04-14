@@ -144,31 +144,46 @@ class Qwen3TTSAdapter(ModelAdapter):
         self._proc.stdin.flush()
 
     def _read_line(self, timeout_s: float) -> dict[str, Any]:
-        """Blocking line read with a deadline; raises on timeout/EOF."""
+        """Blocking read until the next JSON-shaped line, with a deadline.
+
+        Lines that don't start with '{' are ignored — qwen_tts / transformers
+        can still leak banners to stdout despite the subprocess's redirect.
+        """
         assert self._proc is not None and self._proc.stdout is not None
         deadline = time.time() + timeout_s
-        result: dict[str, Any] = {}
-        line_holder: list[str] = []
 
-        def _reader() -> None:
-            line = self._proc.stdout.readline() if self._proc and self._proc.stdout else ""
-            line_holder.append(line)
+        while True:
+            remaining = deadline - time.time()
+            if remaining <= 0:
+                self._kill()
+                raise TimeoutError(f"qwen subprocess timeout after {timeout_s}s")
 
-        t = threading.Thread(target=_reader, daemon=True)
-        t.start()
-        t.join(max(0.0, deadline - time.time()))
-        if t.is_alive():
-            self._kill()
-            raise TimeoutError(f"qwen subprocess timeout after {timeout_s}s")
-        line = line_holder[0]
-        if not line:
-            stderr = self._drain_stderr()
-            raise RuntimeError(f"qwen subprocess EOF; stderr={stderr}")
-        try:
-            result = json.loads(line.strip())
-        except Exception as e:
-            raise RuntimeError(f"qwen subprocess bad json: {e!r} line={line!r}") from e
-        return result
+            line_holder: list[str] = []
+
+            def _reader() -> None:
+                line = self._proc.stdout.readline() if self._proc and self._proc.stdout else ""
+                line_holder.append(line)
+
+            t = threading.Thread(target=_reader, daemon=True)
+            t.start()
+            t.join(max(0.0, remaining))
+            if t.is_alive():
+                self._kill()
+                raise TimeoutError(f"qwen subprocess timeout after {timeout_s}s")
+
+            line = line_holder[0]
+            if not line:
+                stderr = self._drain_stderr()
+                raise RuntimeError(f"qwen subprocess EOF; stderr={stderr}")
+            stripped = line.strip()
+            if not stripped or not stripped.startswith("{"):
+                continue  # banner / warning noise — skip
+            try:
+                return json.loads(stripped)
+            except Exception as e:
+                raise RuntimeError(
+                    f"qwen subprocess bad json: {e!r} line={line!r}"
+                ) from e
 
     def _drain_stderr(self) -> str:
         if self._proc is None or self._proc.stderr is None:
