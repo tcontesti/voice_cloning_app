@@ -27,8 +27,8 @@ async def models() -> list[ModelInfo]:
                   notes="default · PerTh nativo"),
         ModelInfo(name="omnivoice", license="Apache-2.0", available=True,
                   notes="mejor similitud · AudioSeal post-hoc"),
-        ModelInfo(name="qwen3tts", license="Apache-2.0", available=False,
-                  notes="M7 — venv aislado"),
+        ModelInfo(name="qwen3tts", license="Apache-2.0", available=True,
+                  notes="venv aislado · subprocess · AudioSeal post-hoc"),
     ]
 
 

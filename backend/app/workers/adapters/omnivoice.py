@@ -21,11 +21,6 @@ import numpy as np
 
 from app.workers.adapters.base import ModelAdapter, SynthesisOutput
 
-_PATCHES_DIR = os.environ.get("VC_SCRIPTS_DIR", "/home/husll-spark-01/voice_cloning/scripts")
-if _PATCHES_DIR not in sys.path:
-    sys.path.insert(0, _PATCHES_DIR)
-import _patches  # noqa: F401, E402
-
 _OmniVoice: Any = None
 _torch: Any = None
 
@@ -34,6 +29,10 @@ def _lazy_import() -> None:
     global _OmniVoice, _torch
     if _OmniVoice is not None:
         return
+    patches_dir = os.environ.get("VC_SCRIPTS_DIR", "/home/husll-spark-01/voice_cloning/scripts")
+    if patches_dir not in sys.path:
+        sys.path.insert(0, patches_dir)
+    import _patches  # noqa: F401
     import torch as _t
     from omnivoice import OmniVoice as _O
     _torch, _OmniVoice = _t, _O

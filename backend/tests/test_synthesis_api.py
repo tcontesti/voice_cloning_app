@@ -77,7 +77,7 @@ async def test_models_endpoint_lists_chatterbox_available(client: AsyncClient) -
     omni = next(m for m in body if m["name"] == "omnivoice")
     assert omni["available"] is True
     qwen = next(m for m in body if m["name"] == "qwen3tts")
-    assert qwen["available"] is False  # M7
+    assert qwen["available"] is True
 
 
 async def test_create_profile_owns_references(

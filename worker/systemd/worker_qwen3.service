@@ -1,0 +1,30 @@
+# systemd --user unit. Install with:
+#   cp worker/systemd/worker_qwen3.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now worker_qwen3
+#
+# Logs: journalctl --user -u worker_qwen3 -f
+#
+# This worker uses ~/voice_cloning_env/.venv (main venv) for Celery; the
+# Qwen3 model itself runs in a separate process under the qwen venv
+# (~/voice_cloning_qwen_env/.venv) spawned by Qwen3TTSAdapter.
+[Unit]
+Description=vcapp Celery worker — Qwen3-TTS
+After=network.target
+
+[Service]
+Type=exec
+WorkingDirectory=%h/voice_cloning_app
+Environment=VC_APP_ROOT=%h/voice_cloning_app
+Environment=VC_VENV=%h/voice_cloning_env/.venv
+Environment=VC_QWEN_PYTHON=%h/voice_cloning_qwen_env/.venv/bin/python
+Environment=VC_QWEN_WORKER_SCRIPT=%h/voice_cloning_app/worker/qwen_subprocess_worker.py
+Environment=VC_SCRIPTS_DIR=%h/voice_cloning/scripts
+ExecStart=/usr/bin/env bash %h/voice_cloning_app/worker/start_worker.sh qwen3tts
+Restart=on-failure
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=60
+
+[Install]
+WantedBy=default.target

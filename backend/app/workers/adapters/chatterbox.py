@@ -19,13 +19,8 @@ import numpy as np
 
 from app.workers.adapters.base import ModelAdapter, SynthesisOutput
 
-# Apply ARM64 torchaudio patches before any TTS import.
-_PATCHES_DIR = os.environ.get("VC_SCRIPTS_DIR", "/home/husll-spark-01/voice_cloning/scripts")
-if _PATCHES_DIR not in sys.path:
-    sys.path.insert(0, _PATCHES_DIR)
-import _patches  # noqa: F401, E402
-
-# Lazy imports — only when load() is called, so the FastAPI side never pulls torch.
+# Lazy imports — only when load() is called, so the FastAPI container can
+# import this module without _patches / torch / chatterbox being installed.
 _ChatterboxTTS: Any = None
 _torch: Any = None
 
@@ -34,6 +29,10 @@ def _lazy_import() -> None:
     global _ChatterboxTTS, _torch
     if _ChatterboxTTS is not None:
         return
+    patches_dir = os.environ.get("VC_SCRIPTS_DIR", "/home/husll-spark-01/voice_cloning/scripts")
+    if patches_dir not in sys.path:
+        sys.path.insert(0, patches_dir)
+    import _patches  # noqa: F401
     import torch as _t
     from chatterbox.tts import ChatterboxTTS as _C
     _torch, _ChatterboxTTS = _t, _C
