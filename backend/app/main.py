@@ -6,6 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 
+from app.api import audit as audit_router
+from app.api import auth as auth_router
+from app.api import consent as consent_router
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 
@@ -38,6 +41,11 @@ if settings.cors_origins_list:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+
+app.include_router(auth_router.router)
+app.include_router(consent_router.router)
+app.include_router(audit_router.router)
 
 
 @app.get("/health")

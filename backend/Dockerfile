@@ -11,9 +11,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY pyproject.toml ./
+COPY pyproject.toml alembic.ini ./
 COPY app ./app
 COPY tests ./tests
+COPY alembic ./alembic
+COPY scripts ./scripts
 RUN pip install --upgrade pip && pip install -e ".[dev]"
 
 RUN useradd -u 10001 -m appuser && chown -R appuser /app
