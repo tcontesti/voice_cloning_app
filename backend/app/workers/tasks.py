@@ -103,18 +103,25 @@ def synthesize(self, *, synthesis_id: str, model: str) -> dict:
         ref_path = _persist_reference_to_disk(ref_bytes)
         out = adapter.synthesize(text=syn.text, reference_wav=ref_path, options=dict(syn.options))
 
+        scheme, must_apply = wm.scheme_for_model(model)
+        samples = out.samples
+        sr = out.sample_rate
+        if must_apply:
+            emit(job, "postproc", 55, f"aplicando watermark ({scheme})")
+            samples, sr = wm.apply_audioseal(samples, sr)
+
         emit(job, "postproc", 65, "verificando watermark")
-        wm_result = wm.verify("perth", out.samples, out.sample_rate)
+        wm_result = wm.verify(scheme, samples, sr)
 
         emit(job, "postproc", 75, "anti-spoofing")
         try:
-            aasist_score = aasist_mod.score(out.samples, out.sample_rate)
+            aasist_score = aasist_mod.score(samples, sr)
         except Exception as e:
             log.warning("aasist.failed", error=str(e))
             aasist_score = None
 
         emit(job, "uploading", 90, "guardando audio")
-        wav_bytes, target_sr, duration_s = norm.to_wav_bytes(out.samples, out.sample_rate)
+        wav_bytes, target_sr, duration_s = norm.to_wav_bytes(samples, sr)
         s3_key = f"users/{syn.user_id}/syntheses/{syn.id.hex}.wav"
         storage.put_object(
             bucket=get_settings().minio_bucket_syntheses,

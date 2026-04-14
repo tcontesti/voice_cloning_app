@@ -75,7 +75,9 @@ async def test_models_endpoint_lists_chatterbox_available(client: AsyncClient) -
     chat = next(m for m in body if m["name"] == "chatterbox")
     assert chat["available"] is True
     omni = next(m for m in body if m["name"] == "omnivoice")
-    assert omni["available"] is False
+    assert omni["available"] is True
+    qwen = next(m for m in body if m["name"] == "qwen3tts")
+    assert qwen["available"] is False  # M7
 
 
 async def test_create_profile_owns_references(
@@ -150,6 +152,26 @@ async def test_create_synthesis_enqueues_celery_and_audits(
 
     rows = await audit_svc.list_all(session)
     assert any(r.action == "synthesis.queued" for r in rows)
+
+
+async def test_create_synthesis_routes_omnivoice_to_its_queue(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    _, headers = await _login(client, session)
+    rec_id = await _upload_recording(client, headers)
+    profile = (await client.post(
+        "/profiles", headers=headers,
+        json={"name": "auto", "reference_ids": [rec_id]},
+    )).json()
+
+    with patch("app.workers.celery_app.celery_app.send_task") as send:
+        r = await client.post(
+            "/synthesis", headers=headers,
+            json={"profile_id": profile["id"], "model": "omnivoice", "text": "Hola."},
+        )
+        assert r.status_code == 201
+        assert send.call_args.kwargs["queue"] == "synth.omnivoice"
+        assert send.call_args.kwargs["kwargs"]["model"] == "omnivoice"
 
 
 async def test_create_synthesis_rejects_text_too_long(

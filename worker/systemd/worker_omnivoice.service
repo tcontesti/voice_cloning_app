@@ -1,0 +1,24 @@
+# systemd --user unit. Install with:
+#   cp worker/systemd/worker_omnivoice.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now worker_omnivoice
+#
+# Logs: journalctl --user -u worker_omnivoice -f
+[Unit]
+Description=vcapp Celery worker — OmniVoice
+After=network.target
+
+[Service]
+Type=exec
+WorkingDirectory=%h/voice_cloning_app
+Environment=VC_APP_ROOT=%h/voice_cloning_app
+Environment=VC_VENV=%h/voice_cloning_env/.venv
+Environment=VC_SCRIPTS_DIR=%h/voice_cloning/scripts
+ExecStart=/usr/bin/env bash %h/voice_cloning_app/worker/start_worker.sh omnivoice
+Restart=on-failure
+RestartSec=5
+KillMode=mixed
+TimeoutStopSec=30
+
+[Install]
+WantedBy=default.target

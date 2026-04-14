@@ -25,8 +25,8 @@ async def models() -> list[ModelInfo]:
     return [
         ModelInfo(name="chatterbox", license="MIT", available=True,
                   notes="default · PerTh nativo"),
-        ModelInfo(name="omnivoice", license="Apache-2.0", available=False,
-                  notes="M6 — mejor similitud, requiere AudioSeal post-hoc"),
+        ModelInfo(name="omnivoice", license="Apache-2.0", available=True,
+                  notes="mejor similitud · AudioSeal post-hoc"),
         ModelInfo(name="qwen3tts", license="Apache-2.0", available=False,
                   notes="M7 — venv aislado"),
     ]
