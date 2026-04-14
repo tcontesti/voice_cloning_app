@@ -1,0 +1,65 @@
+{
+  "app": {
+    "title": "Clonación de voz clínica",
+    "hospital": "Hospital Universitario Son Llatzer"
+  },
+  "nav": {
+    "home": "Inicio",
+    "record": "Grabar referencia",
+    "synthesize": "Sintetizar voz",
+    "history": "Historial",
+    "logout": "Salir"
+  },
+  "auth": {
+    "loginTitle": "Acceder",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "submit": "Acceder",
+    "errors": {
+      "invalid": "Credenciales no válidas",
+      "network": "No se pudo contactar con el servidor"
+    }
+  },
+  "consent": {
+    "title": "Consentimiento informado",
+    "intro": "Antes de continuar debe leer y aceptar el siguiente texto.",
+    "scrollNotice": "Lea hasta el final para poder firmar.",
+    "accept": "Acepto y firmo",
+    "decline": "Cancelar",
+    "signed": "Consentimiento firmado correctamente.",
+    "drift": "El texto del consentimiento ha cambiado. Recargue para volver a leerlo.",
+    "version": "Versión",
+    "hash": "Hash del texto"
+  },
+  "record": {
+    "title": "Grabación de referencia",
+    "step": "Paso {n} de 3",
+    "deviceLabel": "Micrófono",
+    "noDevices": "No se ha detectado ningún micrófono",
+    "selectDevice": "Seleccione un micrófono",
+    "permissionDenied": "Permiso de micrófono denegado. Habilítelo en el navegador.",
+    "start": "Comenzar grabación",
+    "stop": "Detener",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "retake": "Volver a grabar",
+    "save": "Guardar",
+    "uploading": "Subiendo…",
+    "uploaded": "Grabación guardada",
+    "snr": "Relación señal-ruido",
+    "snrLow": "Demasiado ruido ambiente. Busque un lugar más silencioso.",
+    "duration": "Duración",
+    "speechRatio": "Proporción de voz",
+    "phrases": {
+      "title": "Lea estas frases en voz alta",
+      "tip": "Hable con voz natural, sin susurrar ni gritar."
+    }
+  },
+  "common": {
+    "loading": "Cargando…",
+    "error": "Error",
+    "back": "Volver",
+    "cancel": "Cancelar",
+    "continue": "Continuar"
+  }
+}
