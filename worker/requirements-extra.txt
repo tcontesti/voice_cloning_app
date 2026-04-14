@@ -1,0 +1,18 @@
+# Extra deps installed into ~/voice_cloning_env/.venv on top of torch+TTS.
+# Pinned conservatively to avoid clobbering numpy 1.26.4 / torch 2.11.0+cu130.
+celery[amqp]>=5.4
+kombu>=5.4
+redis>=5.2
+sqlalchemy[asyncio]>=2.0.36
+psycopg2-binary>=2.9
+asyncpg>=0.30
+minio>=7.2
+pydantic>=2.9
+pydantic-settings>=2.6
+structlog>=24.4
+pyloudnorm>=0.1.1
+resemble-perth>=1.0.1
+python-jose[cryptography]>=3.3
+passlib[bcrypt]>=1.7.4
+bcrypt==4.0.1
+fastapi>=0.115

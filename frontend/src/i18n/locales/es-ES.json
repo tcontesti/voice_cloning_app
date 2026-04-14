@@ -55,6 +55,16 @@
       "tip": "Hable con voz natural, sin susurrar ni gritar."
     }
   },
+  "synth": {
+    "title": "Sintetizar voz",
+    "model": "Modelo",
+    "profile": "Perfil de voz",
+    "text": "Texto a sintetizar",
+    "submit": "Generar",
+    "wait": "Esperando…",
+    "watermarkOk": "Watermark verificado",
+    "watermarkMissing": "Watermark NO detectado"
+  },
   "common": {
     "loading": "Cargando…",
     "error": "Error",

@@ -24,6 +24,9 @@ dependencies = [
     "webrtcvad-wheels>=2.0.14",
     "pyloudnorm>=0.1.1",
     "scipy>=1.14",
+    "celery[amqp]>=5.4",
+    "redis>=5.2",
+    "websockets>=14.1",
 ]
 
 [project.optional-dependencies]

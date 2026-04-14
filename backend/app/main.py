@@ -9,7 +9,10 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 from app.api import audit as audit_router
 from app.api import auth as auth_router
 from app.api import consent as consent_router
+from app.api import profiles as profiles_router
 from app.api import recordings as recordings_router
+from app.api import synthesis as synthesis_router
+from app.api import ws_jobs as ws_jobs_router
 from app.services import storage
 from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
@@ -53,6 +56,9 @@ app.include_router(auth_router.router)
 app.include_router(consent_router.router)
 app.include_router(audit_router.router)
 app.include_router(recordings_router.router)
+app.include_router(profiles_router.router)
+app.include_router(synthesis_router.router)
+app.include_router(ws_jobs_router.router)
 
 
 @app.get("/health")

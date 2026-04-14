@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { LogOut, Mic, Home } from 'lucide-vue-next'
+import { LogOut, Mic, Home, Wand2 } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
@@ -28,6 +28,9 @@ function logout() {
             </RouterLink>
             <RouterLink :to="{ name: 'record' }" class="px-3 py-1.5 rounded-lg hover:bg-zinc-100 inline-flex items-center gap-2">
               <Mic class="w-4 h-4" /> {{ t('nav.record') }}
+            </RouterLink>
+            <RouterLink :to="{ name: 'synthesize' }" class="px-3 py-1.5 rounded-lg hover:bg-zinc-100 inline-flex items-center gap-2">
+              <Wand2 class="w-4 h-4" /> {{ t('nav.synthesize') }}
             </RouterLink>
           </nav>
         </div>

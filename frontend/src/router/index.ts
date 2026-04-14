@@ -10,6 +10,7 @@ const routes: RouteRecordRaw[] = [
       { path: '', name: 'home', component: () => import('@/views/HomeView.vue') },
       { path: 'consent', name: 'consent', component: () => import('@/views/ConsentView.vue') },
       { path: 'record', name: 'record', component: () => import('@/views/RecordView.vue') },
+      { path: 'synthesize', name: 'synthesize', component: () => import('@/views/SynthesizeView.vue') },
     ],
   },
   {
