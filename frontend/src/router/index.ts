@@ -1,5 +1,13 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import type { Role } from '@/api/admin'
+
+declare module 'vue-router' {
+  interface RouteMeta {
+    requiresAuth?: boolean
+    roles?: Role[]
+  }
+}
 
 const routes: RouteRecordRaw[] = [
   {
@@ -11,6 +19,18 @@ const routes: RouteRecordRaw[] = [
       { path: 'consent', name: 'consent', component: () => import('@/views/ConsentView.vue') },
       { path: 'record', name: 'record', component: () => import('@/views/RecordView.vue') },
       { path: 'synthesize', name: 'synthesize', component: () => import('@/views/SynthesizeView.vue') },
+      {
+        path: 'admin/users',
+        name: 'admin-users',
+        component: () => import('@/views/AdminUsersView.vue'),
+        meta: { roles: ['admin'] },
+      },
+      {
+        path: 'audit',
+        name: 'audit',
+        component: () => import('@/views/AuditLogView.vue'),
+        meta: { roles: ['admin', 'auditor'] },
+      },
     ],
   },
   {
@@ -31,4 +51,7 @@ router.beforeEach((to) => {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
   if (to.name === 'login' && auth.isAuthenticated) return { name: 'home' }
+  if (to.meta.roles && auth.role && !to.meta.roles.includes(auth.role as Role)) {
+    return { name: 'home' }
+  }
 })

@@ -8,7 +8,43 @@
     "record": "Grabar referencia",
     "synthesize": "Sintetizar voz",
     "history": "Historial",
+    "admin": "Administración",
+    "audit": "Auditoría",
     "logout": "Salir"
+  },
+  "admin": {
+    "usersTitle": "Usuarios",
+    "users": "Usuarios",
+    "recordings": "Grabaciones",
+    "syntheses": "Síntesis",
+    "role": "Rol",
+    "created": "Alta",
+    "status": "Estado",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "activate": "Activar",
+    "deactivate": "Desactivar",
+    "cannotSelf": "No puede desactivar su propia cuenta",
+    "noUsers": "Sin usuarios"
+  },
+  "audit": {
+    "title": "Registro de auditoría",
+    "total": "Total de entradas",
+    "topActions": "Acciones más frecuentes",
+    "chainIntegrity": "Integridad de la cadena",
+    "chainOk": "Verificada",
+    "chainBroken": "ROTA",
+    "action": "Acción",
+    "resource": "Recurso",
+    "actor": "Actor",
+    "when": "Fecha",
+    "empty": "Sin resultados con estos filtros",
+    "filters": {
+      "action": "Acción exacta",
+      "prefix": "Prefijo de acción",
+      "since": "Desde",
+      "apply": "Aplicar filtros"
+    }
   },
   "auth": {
     "loginTitle": "Acceder",

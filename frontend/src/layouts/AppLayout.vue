@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { LogOut, Mic, Home, Wand2 } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { LogOut, Mic, Home, Wand2, Users, FileSearch } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
 const auth = useAuthStore()
 const router = useRouter()
+
+const isAdmin = computed(() => auth.role === 'admin')
+const canAudit = computed(() => auth.role === 'admin' || auth.role === 'auditor')
 
 function logout() {
   auth.logout()
@@ -31,6 +35,12 @@ function logout() {
             </RouterLink>
             <RouterLink :to="{ name: 'synthesize' }" class="px-3 py-1.5 rounded-lg hover:bg-zinc-100 inline-flex items-center gap-2">
               <Wand2 class="w-4 h-4" /> {{ t('nav.synthesize') }}
+            </RouterLink>
+            <RouterLink v-if="isAdmin" :to="{ name: 'admin-users' }" class="px-3 py-1.5 rounded-lg hover:bg-zinc-100 inline-flex items-center gap-2">
+              <Users class="w-4 h-4" /> {{ t('nav.admin') }}
+            </RouterLink>
+            <RouterLink v-if="canAudit" :to="{ name: 'audit' }" class="px-3 py-1.5 rounded-lg hover:bg-zinc-100 inline-flex items-center gap-2">
+              <FileSearch class="w-4 h-4" /> {{ t('nav.audit') }}
             </RouterLink>
           </nav>
         </div>

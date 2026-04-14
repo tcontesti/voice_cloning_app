@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, generate_latest
 
+from app.api import admin as admin_router
 from app.api import audit as audit_router
 from app.api import auth as auth_router
 from app.api import consent as consent_router
@@ -59,6 +60,7 @@ app.include_router(recordings_router.router)
 app.include_router(profiles_router.router)
 app.include_router(synthesis_router.router)
 app.include_router(ws_jobs_router.router)
+app.include_router(admin_router.router)
 
 
 @app.get("/health")
