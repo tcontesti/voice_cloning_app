@@ -57,11 +57,14 @@ services:
       # Reached through SSH tunnel on the host's loopback
       # (Windows Docker Desktop maps host.docker.internal → host loopback)
       RABBITMQ_HOST: host.docker.internal
-      RABBITMQ_PORT: 5672
+      # Tunnel binds non-default ports on the host to avoid clashing with a
+      # local rabbitmq/minio (Docker Desktop, other projects). Override in
+      # .env.multihost; defaults match the dev_start.ps1 forwards.
+      RABBITMQ_PORT: ${RABBITMQ_TUNNEL_PORT:-5682}
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       MINIO_HOST: host.docker.internal
-      MINIO_PORT: 9000
+      MINIO_PORT: ${MINIO_TUNNEL_PORT:-9010}
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_SECURE: "false"
