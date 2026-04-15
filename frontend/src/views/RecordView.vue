@@ -1,63 +1,62 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import VoiceRecorder from '@/components/VoiceRecorder.vue'
-import { recordingsApi, type Recording } from '@/api/recordings'
-import { ApiError } from '@/api/client'
-import type { RecorderResult } from '@/composables/useRecorder'
+import RecorderStudio from '@/ui/composites/RecorderStudio.vue'
+import type { Profile } from '@/api/synthesis'
 
 const { t } = useI18n()
-const uploading = ref(false)
-const uploaded = ref<Recording | null>(null)
-const errorMsg = ref<string | null>(null)
+const lastProfile = ref<Profile | null>(null)
 
-async function onRecorded(result: RecorderResult) {
-  uploading.value = true
-  errorMsg.value = null
-  try {
-    uploaded.value = await recordingsApi.upload(result.blob)
-  } catch (e) {
-    if (e instanceof ApiError) {
-      const detail = (e.detail as string) ?? t('common.error')
-      errorMsg.value = detail
-    } else {
-      errorMsg.value = t('common.error')
-    }
-  } finally {
-    uploading.value = false
-  }
+function onProfileCreated(p: Profile) {
+  lastProfile.value = p
 }
 </script>
 
 <template>
-  <div class="max-w-3xl mx-auto space-y-6">
-    <div>
-      <h1 class="text-2xl font-semibold">{{ t('record.title') }}</h1>
-      <p class="text-sm text-zinc-500 mt-1">{{ t('record.step', { n: 2 }) }}</p>
-    </div>
+  <div class="record-view">
+    <RecorderStudio @profile-created="onProfileCreated" />
 
-    <div class="card">
-      <h2 class="font-medium mb-3">{{ t('record.phrases.title') }}</h2>
-      <p class="text-sm text-zinc-600 mb-4">{{ t('record.phrases.tip') }}</p>
-      <VoiceRecorder @recorded="onRecorded" @error="(m) => (errorMsg = m)" />
-    </div>
-
-    <div v-if="uploading" class="card text-sm text-zinc-600">{{ t('record.uploading') }}</div>
-
-    <div v-if="uploaded" class="card space-y-2">
-      <p class="text-sm text-success-600 font-medium">✓ {{ t('record.uploaded') }}</p>
-      <dl class="grid grid-cols-2 gap-y-1 text-sm">
-        <dt class="text-zinc-500">{{ t('record.duration') }}</dt>
-        <dd>{{ uploaded.duration_s.toFixed(2) }} s</dd>
-        <dt class="text-zinc-500">{{ t('record.snr') }}</dt>
-        <dd>{{ uploaded.snr_db !== null ? `${uploaded.snr_db.toFixed(1)} dB` : '—' }}</dd>
-        <dt class="text-zinc-500">{{ t('record.speechRatio') }}</dt>
-        <dd>{{ uploaded.speech_ratio !== null ? `${(uploaded.speech_ratio * 100).toFixed(0)} %` : '—' }}</dd>
-      </dl>
-    </div>
-
-    <div v-if="errorMsg" class="card text-sm text-danger-600" role="alert">
-      {{ errorMsg }}
+    <div v-if="lastProfile" class="record-view__confirm studio-card" role="status">
+      <div class="studio-label">PROFILE CREADO</div>
+      <div class="record-view__confirm-name">{{ lastProfile.name }}</div>
+      <div class="studio-value">
+        {{ lastProfile.reference_ids.length }} ref · {{ t('common.id') ?? 'id' }} {{ lastProfile.id.slice(0, 8) }}
+      </div>
+      <RouterLink :to="{ name: 'synthesize' }" class="btn btn-primary record-view__cta">
+        {{ t('nav.synthesize') }} →
+      </RouterLink>
     </div>
   </div>
 </template>
+
+<style scoped>
+.record-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.record-view__confirm {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 18px;
+  align-items: center;
+  border-color: var(--accent);
+}
+.record-view__confirm-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--fg-0);
+  letter-spacing: -0.01em;
+}
+.record-view__cta {
+  padding: 10px 18px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+}
+</style>
