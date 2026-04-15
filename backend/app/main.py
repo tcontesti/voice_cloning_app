@@ -13,6 +13,7 @@ from app.api import consent as consent_router
 from app.api import profiles as profiles_router
 from app.api import recordings as recordings_router
 from app.api import synthesis as synthesis_router
+from app.api import system as system_router
 from app.api import ws_jobs as ws_jobs_router
 from app.services import storage
 from app.core.config import get_settings
@@ -61,6 +62,7 @@ app.include_router(profiles_router.router)
 app.include_router(synthesis_router.router)
 app.include_router(ws_jobs_router.router)
 app.include_router(admin_router.router)
+app.include_router(system_router.router)
 
 
 @app.get("/health")
