@@ -16,15 +16,18 @@ export const useAuthStore = defineStore('auth', {
     loading: false,
   }),
   getters: {
-    isAuthenticated: (s) => Boolean(s.token && s.user),
+    // Presence of token is enough to treat the session as authenticated.
+    // `user` is loaded async via refreshUser() after rehydration; if the
+    // token is expired or tampered, /auth/me 401s and we auto-logout.
+    isAuthenticated: (s) => Boolean(s.token),
     role: (s) => s.user?.role ?? null,
   },
   actions: {
-    bootstrapFromStorage() {
+    async bootstrapFromStorage() {
       const t = localStorage.getItem(TOKEN_KEY)
       if (!t) return
       this.token = t
-      void this.refreshUser()
+      await this.refreshUser()
     },
     async login(email: string, password: string) {
       this.loading = true
