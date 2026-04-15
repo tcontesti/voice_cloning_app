@@ -115,3 +115,98 @@ docker compose -f infra\compose\docker-compose.multihost.yml --env-file infra\co
 ```
 
 MinIO: Spark ya persiste en volumen; si ese host vuela, pierdes las referencias y síntesis. Asumido para el piloto.
+
+## Resiliencia — túnel que sobrevive al roaming de la Spark
+
+La Spark viaja entre oficina y casa y se suspende de noche. Un `ssh -N` plano
+muere en cuanto cambia la IP o la red; `autossh` lo resuelve reconectando
+sólo.
+
+### autossh (recomendado)
+
+Instala uno de los dos en el PC Windows:
+
+```powershell
+# preferido — bucket main de scoop
+scoop install autossh
+
+# alternativa
+winget install eternallybored.autossh
+```
+
+`scripts\dev_start.ps1` detecta autossh automáticamente y lo usa con
+`AUTOSSH_GATETIME=0` (nunca se rinde) + keepalives cada 15s. Si autossh no
+está instalado, el script cae a `ssh` plano con un aviso — sigue funcionando
+pero tendrás que relanzar el túnel cada vez que la Spark se mueva.
+
+Para forzar el camino `ssh` plano (debug):
+
+```powershell
+.\scripts\dev_start.ps1 -UseSSH
+```
+
+### Red estable con Tailscale
+
+Aun con autossh, cambiar de red cambia la IP de la Spark y hay que actualizar
+`~/.ssh/config`. Tailscale evita ese paso dándote una IP 100.x.x.x que viaja
+con la máquina.
+
+1. Instalar en el PC Windows: descargar desde `https://tailscale.com/download`
+   (GUI) o `winget install tailscale.tailscale`.
+2. Instalar en la Spark (Linux):
+   ```bash
+   curl -fsSL https://tailscale.com/install.sh | sh
+   sudo tailscale up
+   ```
+3. Loguear ambos con la **misma cuenta** Tailscale.
+4. Obtener el hostname MagicDNS de la Spark (aparece en `tailscale status`),
+   típicamente `spark-d03c.tail-xxxxx.ts.net`.
+5. Editar `~/.ssh/config` en Windows:
+   ```
+   Host spark
+       Hostname spark-d03c.tail-xxxxx.ts.net
+       # o: Hostname 100.x.x.x
+       User tonic
+       IdentityFile ~/.ssh/id_ed25519
+   ```
+
+Beneficio: SSH (y por tanto el túnel autossh) sigue funcionando sin tocar
+nada cuando la Spark cambia de red o despierta. Tailscale atraviesa NAT
+vía DERP.
+
+No hay integración en el código — Tailscale es una capa de red, no una
+dependencia de la app.
+
+### Watchdog opcional (Task Scheduler de Windows)
+
+`scripts\install_watchdog.ps1` registra una tarea programada que lanza
+`dev_start.ps1` al iniciar sesión. Off por defecto: activarla registra una
+tarea en la cuenta del usuario sin pedir permiso cada vez que cambia de
+rama, lo cual es mal patrón si varias personas clonan el repo.
+
+Para activarla:
+
+```powershell
+.\scripts\install_watchdog.ps1
+```
+
+Para desinstalarla:
+
+```powershell
+.\scripts\uninstall_watchdog.ps1
+```
+
+### Modo degradado en la UI
+
+El frontend polea `GET /system/health` cada 10s y muestra en la topbar un chip
+con el estado agregado. Cuando la Spark está offline:
+
+- El chip pasa a ámbar "SPARK OFFLINE".
+- En `SynthesizeView`, las `ModelCard` de workers offline quedan deshabilitadas.
+- El botón GENERATE se bloquea con tooltip *"Spark desconectada. Levántala e
+  intenta de nuevo."*
+- Si el job avanza y la Spark cae a mitad, `JobMonitor` detecta el stall
+  (>30s sin progreso) y muestra un banner amber explicando que el mensaje
+  sigue en RabbitMQ y se procesará cuando la Spark vuelva.
+
+`RecordView` funciona igual — las grabaciones van al MinIO local del PC.

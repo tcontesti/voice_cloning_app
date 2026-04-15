@@ -24,17 +24,39 @@ const props = withDefaults(
 
 const startedAt = ref<number | null>(null)
 const elapsedS = ref(0)
+const lastProgressAt = ref<number | null>(null)
+const sinceProgressS = ref(0)
 let tick = 0
+
+const STALL_THRESHOLD_S = 30
 
 function start() {
   startedAt.value = performance.now()
+  lastProgressAt.value = performance.now()
   tick = window.setInterval(() => {
     if (startedAt.value) elapsedS.value = (performance.now() - startedAt.value) / 1000
-  }, 50)
+    if (lastProgressAt.value)
+      sinceProgressS.value = (performance.now() - lastProgressAt.value) / 1000
+  }, 250)
 }
 function stop() {
   if (tick) { window.clearInterval(tick); tick = 0 }
 }
+
+// Reset the stall clock every time pct or stage actually advances.
+watch(() => [props.pct, props.stage], (next, prev) => {
+  if (!prev || next[0] !== prev[0] || next[1] !== prev[1]) {
+    lastProgressAt.value = performance.now()
+    sinceProgressS.value = 0
+  }
+})
+
+// A running job that hasn't advanced for STALL_THRESHOLD_S is almost always
+// the Spark tunnel dropping mid-stage. The RabbitMQ message survives; the
+// worker will pick it up when it reconnects.
+const stalled = computed(() =>
+  !!props.running && !props.finished && !props.failed && sinceProgressS.value >= STALL_THRESHOLD_S,
+)
 
 watch(() => props.running, (r) => {
   if (r) start()
@@ -112,6 +134,14 @@ const tint = computed<'green' | 'amber' | 'red' | 'blue'>(() => {
         <path :d="sparkPath" fill="none" stroke="var(--accent-glow)" stroke-width="1.5" />
       </svg>
     </div>
+
+    <div v-if="stalled" class="jm__stall" role="status">
+      <LED color="amber" on pulse size="xs" />
+      <span>
+        Conexión con Spark perdida (sin avance en {{ sinceProgressS.toFixed(0) }}s).
+        El job está encolado y se procesará cuando la Spark vuelva.
+      </span>
+    </div>
   </div>
 </template>
 
@@ -160,4 +190,18 @@ const tint = computed<'green' | 'amber' | 'red' | 'blue'>(() => {
 }
 .jm__msg { color: var(--fg-0); }
 .jm__spark { flex-shrink: 0; }
+
+.jm__stall {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--signal-amber) 12%, var(--bg-1));
+  border: 1px solid color-mix(in srgb, var(--signal-amber) 45%, transparent);
+  border-radius: var(--radius-3);
+  color: var(--signal-amber);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+}
 </style>

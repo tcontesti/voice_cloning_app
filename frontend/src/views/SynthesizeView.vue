@@ -17,6 +17,10 @@ import ModelCard from '@/ui/composites/ModelCard.vue'
 import JobMonitor from '@/ui/composites/JobMonitor.vue'
 import OptionsPanel, { type ElevenOptions } from '@/ui/composites/OptionsPanel.vue'
 import WaveformTimeline from '@/ui/primitives/WaveformTimeline.vue'
+import { useSystemHealth } from '@/composables/useSystemHealth'
+import type { WorkerName } from '@/api/system'
+
+const { data: health, degraded, workerAvailable } = useSystemHealth()
 
 const { t } = useI18n()
 
@@ -68,6 +72,24 @@ function selectModel(m: ModelInfo) {
   if (!m.available) return
   selectedModel.value = m.name as SynthesisModel
 }
+
+function modelOnline(name: string): boolean {
+  // When the health probe hasn't answered yet, assume online so the UI doesn't
+  // flash a disabled state during the initial ~10s after mount.
+  if (!health.value) return true
+  return workerAvailable(name as WorkerName)
+}
+const selectedModelOnline = computed(() => modelOnline(selectedModel.value))
+const submitBlocked = computed(() => {
+  if (submitting.value || !text.value.trim()) return true
+  if (degraded.value === 'backend-down') return true
+  return !selectedModelOnline.value
+})
+const submitBlockedReason = computed(() => {
+  if (degraded.value === 'backend-down') return 'Servidor sin respuesta. Reintenta en unos segundos.'
+  if (!selectedModelOnline.value) return 'Spark desconectada. Levántala e intenta de nuevo.'
+  return ''
+})
 
 async function ensureProfile(): Promise<string> {
   if (selectedProfileId.value) return selectedProfileId.value
@@ -173,7 +195,7 @@ watch(audioUrl, () => {
             :license="m.license"
             :notes="m.notes ?? undefined"
             :selected="selectedModel === (m.name as SynthesisModel)"
-            :available="m.available"
+            :available="m.available && modelOnline(m.name)"
             :metrics="modelMetrics(m)"
             @select="selectModel(m)"
           />
@@ -224,13 +246,18 @@ watch(audioUrl, () => {
           <button
             type="button"
             class="btn btn-primary synth__submit"
-            :disabled="submitting || !text.trim()"
+            :disabled="submitBlocked"
+            :title="submitBlockedReason || undefined"
             @click="submit"
           >
             <Send class="w-4 h-4" />
             {{ submitting ? 'GENERANDO…' : 'GENERATE' }}
           </button>
 
+          <p v-if="submitBlockedReason && !submitting && text.trim()"
+             class="synth__warn" role="status">
+            {{ submitBlockedReason }}
+          </p>
           <p v-if="errorMsg" class="synth__error" role="alert">{{ errorMsg }}</p>
         </div>
 
@@ -377,6 +404,16 @@ watch(audioUrl, () => {
   border: 1px solid var(--signal-red);
   border-radius: var(--radius-3);
   color: var(--signal-red);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.synth__warn {
+  margin: 0;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--signal-amber) 10%, var(--bg-1));
+  border: 1px solid color-mix(in srgb, var(--signal-amber) 45%, transparent);
+  border-radius: var(--radius-3);
+  color: var(--signal-amber);
   font-family: var(--font-mono);
   font-size: 12px;
 }

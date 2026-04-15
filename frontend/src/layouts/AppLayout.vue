@@ -5,6 +5,7 @@ import { computed } from 'vue'
 import { LogOut, Mic, Home, Wand2, Users, FileSearch, History, AudioWaveform } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import LED from '@/ui/primitives/LED.vue'
+import SystemStatusBadge from '@/ui/composites/SystemStatusBadge.vue'
 
 const { t } = useI18n()
 const auth = useAuthStore()
@@ -53,6 +54,7 @@ function logout() {
           </RouterLink>
         </nav>
         <div class="shell__user">
+          <SystemStatusBadge />
           <span class="shell__user-email">{{ auth.user?.email }}</span>
           <button class="shell__logout" @click="logout" :aria-label="t('nav.logout')">
             <LogOut class="w-4 h-4" /><span>{{ t('nav.logout') }}</span>

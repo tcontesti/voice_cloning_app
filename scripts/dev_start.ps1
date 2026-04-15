@@ -4,7 +4,9 @@
 
 .DESCRIPTION
     One-shot bootstrap for the private pilot:
-      1. Opens an SSH tunnel to Spark for RabbitMQ (5672) and MinIO (9000).
+      1. Opens a persistent tunnel to Spark (autossh preferred, ssh fallback).
+         autossh reconnects automatically when the Spark host roams between
+         networks or suspends overnight.
       2. Builds and starts Postgres + Redis + Backend + nginx on the PC.
       3. Starts the Vite dev server in a new PowerShell window.
 
@@ -15,12 +17,16 @@
 .PARAMETER SparkAlias
     SSH host alias (default: "spark"). Must work without password prompt.
 
+.PARAMETER UseSSH
+    Force plain ssh even if autossh is installed (debugging).
+
 .EXAMPLE
     .\scripts\dev_start.ps1
 #>
 [CmdletBinding()]
 param(
-    [string]$SparkAlias = "spark"
+    [string]$SparkAlias = "spark",
+    [switch]$UseSSH
 )
 
 $ErrorActionPreference = "Stop"
@@ -39,28 +45,58 @@ if (-not (Test-Path $EnvFile)) {
     exit 1
 }
 
-# 1 — SSH tunnel (hidden, persistent)
-Write-Host "[1/3] opening SSH tunnel to '$SparkAlias' (5672, 9000) ..." -ForegroundColor Cyan
-$sshArgs = @(
-    "-N",
-    "-o", "ServerAliveInterval=30",
-    "-o", "ExitOnForwardFailure=yes",
-    "-L", "5672:localhost:5672",
-    "-L", "9000:localhost:9000",
-    $SparkAlias
+# 1 — Tunnel (autossh preferred, ssh fallback)
+$autossh = Get-Command autossh -ErrorAction SilentlyContinue
+$useAutossh = ($autossh -ne $null) -and (-not $UseSSH)
+
+# Port-forward spec shared by both paths. Keeping it in one list avoids drift.
+$forwards = @(
+    "-L", "5682:localhost:5672",    # RabbitMQ AMQP
+    "-L", "9010:localhost:9000",    # MinIO S3 API
+    "-L", "15682:localhost:15672",  # RabbitMQ mgmt UI
+    "-L", "9011:localhost:9001",    # MinIO console
+    "-R", "5433:localhost:5432",    # reverse: expose PC Postgres to Spark
+    "-R", "6380:localhost:6379"     # reverse: expose PC Redis to Spark
 )
-$ssh = Start-Process ssh -ArgumentList $sshArgs -PassThru -WindowStyle Hidden
-Start-Sleep -Seconds 2
-if ($ssh.HasExited) {
-    throw "SSH tunnel exited immediately. Check that 'ssh $SparkAlias' works without a password prompt."
+$commonOpts = @(
+    "-N",
+    "-o", "ServerAliveInterval=15",
+    "-o", "ServerAliveCountMax=3",
+    "-o", "ExitOnForwardFailure=yes",
+    "-o", "ConnectTimeout=10",
+    "-o", "StrictHostKeyChecking=accept-new"
+)
+
+if ($useAutossh) {
+    Write-Host "[1/3] opening autossh tunnel to '$SparkAlias' (auto-reconnect) ..." -ForegroundColor Cyan
+    # AUTOSSH_GATETIME=0 means "never give up"; on first failure retry immediately.
+    $env:AUTOSSH_GATETIME = "0"
+    $tunnelArgs = @("-M", "0") + $commonOpts + $forwards + @($SparkAlias)
+    $tunnel = Start-Process autossh -ArgumentList $tunnelArgs -PassThru -WindowStyle Hidden
+    $tunnelName = "autossh"
+} else {
+    if (-not $UseSSH) {
+        Write-Host "[setup] autossh not found — falling back to plain ssh." -ForegroundColor Yellow
+        Write-Host "        Tunnel will NOT auto-reconnect if Spark roams or sleeps." -ForegroundColor Yellow
+        Write-Host "        Install: scoop install autossh   (or winget install eternallybored.autossh)" -ForegroundColor DarkGray
+    }
+    Write-Host "[1/3] opening ssh tunnel to '$SparkAlias' ..." -ForegroundColor Cyan
+    $tunnelArgs = $commonOpts + $forwards + @($SparkAlias)
+    $tunnel = Start-Process ssh -ArgumentList $tunnelArgs -PassThru -WindowStyle Hidden
+    $tunnelName = "ssh"
 }
-Write-Host "      tunnel PID=$($ssh.Id) (kill with: Stop-Process $($ssh.Id))" -ForegroundColor DarkGray
+
+Start-Sleep -Seconds 2
+if ($tunnel.HasExited) {
+    throw "$tunnelName tunnel exited immediately. Check that 'ssh $SparkAlias' works without a password prompt."
+}
+Write-Host "      $tunnelName PID=$($tunnel.Id) (kill with: Stop-Process $($tunnel.Id))" -ForegroundColor DarkGray
 
 # 2 — docker stack
 Write-Host "[2/3] docker compose up --build ..." -ForegroundColor Cyan
 docker compose -f $ComposeFile --env-file $EnvFile up -d --build
 if ($LASTEXITCODE -ne 0) {
-    Stop-Process $ssh.Id -ErrorAction SilentlyContinue
+    Stop-Process $tunnel.Id -ErrorAction SilentlyContinue
     throw "docker compose failed (exit $LASTEXITCODE). Tunnel stopped."
 }
 
@@ -79,6 +115,6 @@ Write-Host "✓ dev multi-host up" -ForegroundColor Green
 Write-Host "  Backend:    http://localhost:8000/health"
 Write-Host "  Nginx TLS:  https://localhost/"
 Write-Host "  Frontend:   http://localhost:5173"
-Write-Host "  SSH tunnel: PID $($ssh.Id)"
+Write-Host "  Tunnel:     $tunnelName PID $($tunnel.Id)"
 Write-Host ""
 Write-Host "To stop: .\scripts\dev_stop.ps1" -ForegroundColor DarkGray
