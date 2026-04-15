@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Send, ShieldCheck, ShieldAlert, Download, Sliders, Play, Pause } from 'lucide-vue-next'
 import {
@@ -19,8 +19,10 @@ import OptionsPanel, { type ElevenOptions } from '@/ui/composites/OptionsPanel.v
 import WaveformTimeline from '@/ui/primitives/WaveformTimeline.vue'
 import { useSystemHealth } from '@/composables/useSystemHealth'
 import type { WorkerName } from '@/api/system'
+import { useAuthStore } from '@/stores/auth'
 
 const { data: health, degraded, workerAvailable } = useSystemHealth()
+const auth = useAuthStore()
 
 const { t } = useI18n()
 
@@ -123,11 +125,35 @@ async function submit() {
   }
 }
 
-const audioUrl = computed(() => {
-  if (!job.value) return null
-  const stage = last.value?.stage
-  if (stage !== 'done' && job.value.status !== 'succeeded') return null
-  return synthesisApi.audioUrl(job.value.id)
+// Audio is served from a Bearer-protected endpoint, but <audio src> and
+// WaveSurfer's loader use plain GET without our auth header. We fetch the
+// blob ourselves and hand the player an object URL.
+const audioUrl = ref<string | null>(null)
+
+watch(
+  () => [job.value?.id, last.value?.stage, job.value?.status] as const,
+  async ([id, stage, status]) => {
+    const ready = !!id && (stage === 'done' || status === 'succeeded')
+    if (!ready || !id) {
+      if (audioUrl.value) { URL.revokeObjectURL(audioUrl.value); audioUrl.value = null }
+      return
+    }
+    if (audioUrl.value) return  // already loaded for this job
+    try {
+      const res = await fetch(synthesisApi.audioUrl(id), {
+        headers: auth.token ? { Authorization: `Bearer ${auth.token}` } : {},
+      })
+      if (!res.ok) throw new Error(`audio ${res.status}`)
+      const blob = await res.blob()
+      audioUrl.value = URL.createObjectURL(blob)
+    } catch (e) {
+      errorMsg.value = `No se pudo cargar el audio: ${(e as Error).message}`
+    }
+  },
+)
+
+onBeforeUnmount(() => {
+  if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
 })
 
 const wmStatus = computed(() => {

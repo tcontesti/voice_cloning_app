@@ -31,6 +31,10 @@ let tick = 0
 const STALL_THRESHOLD_S = 30
 
 function start() {
+  // Idempotent: both onMounted and the immediate watch can call start(); a
+  // second setInterval would orphan the first and the elapsed timer would
+  // keep ticking forever after stop().
+  if (tick) return
   startedAt.value = performance.now()
   lastProgressAt.value = performance.now()
   tick = window.setInterval(() => {
