@@ -71,6 +71,11 @@ if ($useAutossh) {
     Write-Host "[1/3] opening autossh tunnel to '$SparkAlias' (auto-reconnect) ..." -ForegroundColor Cyan
     # AUTOSSH_GATETIME=0 means "never give up"; on first failure retry immediately.
     $env:AUTOSSH_GATETIME = "0"
+    # scoop's autossh is an msys build; without AUTOSSH_PATH it looks for
+    # /usr/bin/ssh (doesn't exist on Windows) and exits instantly. Point it
+    # at the Windows OpenSSH binary explicitly.
+    $sshWin = (Get-Command ssh -ErrorAction SilentlyContinue).Source
+    if ($sshWin) { $env:AUTOSSH_PATH = $sshWin }
     $tunnelArgs = @("-M", "0") + $commonOpts + $forwards + @($SparkAlias)
     $tunnel = Start-Process autossh -ArgumentList $tunnelArgs -PassThru -WindowStyle Hidden
     $tunnelName = "autossh"
