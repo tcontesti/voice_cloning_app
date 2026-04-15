@@ -54,9 +54,12 @@ $forwards = @(
     "-L", "5682:localhost:5672",    # RabbitMQ AMQP
     "-L", "9010:localhost:9000",    # MinIO S3 API
     "-L", "15682:localhost:15672",  # RabbitMQ mgmt UI
-    "-L", "9011:localhost:9001",    # MinIO console
-    "-R", "5433:localhost:5432",    # reverse: expose PC Postgres to Spark
-    "-R", "6380:localhost:6379"     # reverse: expose PC Redis to Spark
+    "-L", "9011:localhost:9001"     # MinIO console
+    # Reverse tunnels removed: Spark workers read their own Postgres/Redis,
+    # not the PC's. The -R binds also caused autossh to die on reconnect
+    # because sshd holds onto the remote port and the next ssh child fails
+    # ExitOnForwardFailure=yes. Re-add only when a worker truly needs to
+    # reach a PC-side service.
 )
 $commonOpts = @(
     "-N",
