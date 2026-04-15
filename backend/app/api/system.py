@@ -36,6 +36,10 @@ WorkerStatus = Literal["available", "offline"]
 KNOWN_WORKERS: tuple[str, ...] = ("chatterbox", "omnivoice", "qwen3tts", "elevenlabs")
 
 _PROBE_TIMEOUT_S = 2.0
+# Celery `inspect.active_queues` over the SSH tunnel takes ~3s round trip
+# to broadcast + collect replies. The TCP probes still use the short
+# timeout; only the worker probe gets the longer leash.
+_WORKER_PROBE_TIMEOUT_S = 5.0
 _CACHE_TTL_S = 5.0
 
 
@@ -90,7 +94,7 @@ async def _probe_workers() -> dict[str, WorkerStatus]:
 
         result: dict[str, WorkerStatus] = {w: "offline" for w in KNOWN_WORKERS}
         try:
-            insp = celery_app.control.inspect(timeout=_PROBE_TIMEOUT_S)
+            insp = celery_app.control.inspect(timeout=_WORKER_PROBE_TIMEOUT_S)
             queues_by_worker = insp.active_queues() or {}
         except Exception:
             return result
@@ -109,7 +113,7 @@ async def _probe_workers() -> dict[str, WorkerStatus]:
     try:
         return await asyncio.wait_for(
             asyncio.to_thread(_inspect),
-            timeout=_PROBE_TIMEOUT_S + 1.0,
+            timeout=_WORKER_PROBE_TIMEOUT_S + 1.5,
         )
     except asyncio.TimeoutError:
         return {w: "offline" for w in KNOWN_WORKERS}

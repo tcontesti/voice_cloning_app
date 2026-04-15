@@ -54,18 +54,22 @@ $forwards = @(
     "-L", "5682:localhost:5672",    # RabbitMQ AMQP
     "-L", "9010:localhost:9000",    # MinIO S3 API
     "-L", "15682:localhost:15672",  # RabbitMQ mgmt UI
-    "-L", "9011:localhost:9001"     # MinIO console
-    # Reverse tunnels removed: Spark workers read their own Postgres/Redis,
-    # not the PC's. The -R binds also caused autossh to die on reconnect
-    # because sshd holds onto the remote port and the next ssh child fails
-    # ExitOnForwardFailure=yes. Re-add only when a worker truly needs to
-    # reach a PC-side service.
+    "-L", "9011:localhost:9001",    # MinIO console
+    # Reverse forwards: Spark workers dial PC-side Postgres + Redis via these.
+    # If they collide with an orphan bind on Spark (previous ssh session not
+    # reaped), the ExitOnForwardFailure flag below would have killed ssh and
+    # autossh would loop forever — so we deliberately don't set that flag.
+    # In practice when the orphan times out (sshd ClientAlive on Spark) the
+    # next autossh retry binds cleanly.
+    "-R", "5433:localhost:5432",    # PC Postgres -> Spark
+    "-R", "6380:localhost:6379"     # PC Redis    -> Spark (Celery result backend)
 )
 $commonOpts = @(
     "-N",
     "-o", "ServerAliveInterval=15",
     "-o", "ServerAliveCountMax=3",
-    "-o", "ExitOnForwardFailure=yes",
+    # Intentionally NOT setting ExitOnForwardFailure — see comment on -R above.
+    # ServerAlive* still detects a dead transport and triggers autossh restart.
     "-o", "ConnectTimeout=10",
     "-o", "StrictHostKeyChecking=accept-new"
 )
