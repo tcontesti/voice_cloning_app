@@ -1,0 +1,160 @@
+/* Studio theme entrypoint — loaded once from main.ts.
+ * Order matters: fonts → tailwind → tokens → component utilities. */
+
+@import "@fontsource-variable/inter-tight/index.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/source-serif-4/400.css";
+@import "@fontsource/source-serif-4/500.css";
+
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* Tailwind v4 @theme: map our CSS vars into utility classes so existing
+ * `bg-*` / `text-*` calls stay valid while we migrate views. Only the
+ * subset we actually use is exposed. */
+@theme {
+  --color-bg-0: #0a0a0c;
+  --color-bg-1: #111114;
+  --color-bg-2: #17171c;
+  --color-bg-3: #1f1f26;
+  --color-line: #2a2a33;
+  --color-line-2: #3a3a46;
+  --color-fg-0: #f5f5f7;
+  --color-fg-1: #b4b4be;
+  --color-fg-2: #6e6e78;
+  --color-fg-3: #3e3e48;
+  --color-accent: #7c5cff;
+  --color-accent-glow: #a88aff;
+  --color-accent-dim: #4a3aa0;
+  --color-signal-green: #00e5a0;
+  --color-signal-amber: #ffb020;
+  --color-signal-red: #ff3b5c;
+  --color-signal-blue: #38bdf8;
+
+  /* Retro-compat para vistas legacy (se eliminan al migrar). */
+  --color-accent-50:  #f2eeff;
+  --color-accent-100: #e4dbff;
+  --color-accent-200: #cbb8ff;
+  --color-accent-300: #a88aff;
+  --color-accent-400: #8f6fff;
+  --color-accent-500: #7c5cff;
+  --color-accent-600: #7c5cff;
+  --color-accent-700: #6a48e8;
+  --color-accent-800: #4a3aa0;
+  --color-accent-900: #2f2668;
+  --color-success-600: #00e5a0;
+  --color-danger-600:  #ff3b5c;
+  --color-danger-300:  #ff7a8c;
+  --color-danger-50:   #2a0f14;
+  --color-danger-700:  #c71f3f;
+
+  --font-sans: var(--font-sans, "Inter Tight Variable"), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --radius-card: var(--radius-5);
+}
+
+html, body { height: 100%; }
+
+/* Component utilities — studio flavoured replacements for the legacy
+ * `.btn`, `.card`, `.input`, `.label` classes used by existing views. */
+@layer components {
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-4);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: transform var(--dur-base) var(--ease-studio),
+                background var(--dur-base) var(--ease-studio),
+                box-shadow var(--dur-base) var(--ease-studio);
+  }
+  .btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--bg-0), 0 0 0 4px var(--accent);
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary {
+    composes: btn;
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary { /* actual declaration (composes not valid in plain CSS) */
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent-glow);
+    transform: translateY(-1px);
+    box-shadow: var(--glow-accent);
+  }
+  .btn-secondary {
+    background: var(--bg-2);
+    color: var(--fg-0);
+    border: 1px solid var(--line);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--bg-3);
+    border-color: var(--line-2);
+  }
+  .btn-danger {
+    background: var(--signal-red);
+    color: #1a0005;
+  }
+
+  .card {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-5);
+    box-shadow: var(--shadow-card);
+    padding: 1.5rem;
+  }
+
+  .label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--fg-1);
+  }
+
+  .input {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-4);
+    color: var(--fg-0);
+    font-size: 0.875rem;
+    transition: border-color var(--dur-base) var(--ease-studio),
+                box-shadow var(--dur-base) var(--ease-studio);
+  }
+  .input::placeholder { color: var(--fg-3); }
+  .input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+
+  /* Text display H1 — grande, tight. */
+  .display-1 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 56px;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    text-shadow: 0 0 24px color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  .display-2 {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 40px;
+    line-height: 1.1;
+    letter-spacing: -0.018em;
+  }
+}

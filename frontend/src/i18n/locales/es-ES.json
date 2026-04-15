@@ -6,6 +6,7 @@
   "nav": {
     "home": "Inicio",
     "record": "Grabar referencia",
+    "profiles": "Perfiles de voz",
     "synthesize": "Sintetizar voz",
     "history": "Historial",
     "admin": "Administración",

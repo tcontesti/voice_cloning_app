@@ -18,7 +18,9 @@ const routes: RouteRecordRaw[] = [
       { path: '', name: 'home', component: () => import('@/views/HomeView.vue') },
       { path: 'consent', name: 'consent', component: () => import('@/views/ConsentView.vue') },
       { path: 'record', name: 'record', component: () => import('@/views/RecordView.vue') },
+      { path: 'profiles', name: 'profiles', component: () => import('@/views/ProfilesView.vue') },
       { path: 'synthesize', name: 'synthesize', component: () => import('@/views/SynthesizeView.vue') },
+      { path: 'history', name: 'history', component: () => import('@/views/HistoryView.vue') },
       {
         path: 'admin/users',
         name: 'admin-users',
@@ -40,12 +42,24 @@ const routes: RouteRecordRaw[] = [
       { path: '', name: 'login', component: () => import('@/views/LoginView.vue') },
     ],
   },
+  // Design system playground — dev-only. Excluded from the production bundle
+  // and bypasses auth so we can iterate the look in isolation.
+  ...(import.meta.env.DEV
+    ? ([
+        {
+          path: '/_ui',
+          name: 'ui-demo',
+          component: () => import('@/views/UiDemoView.vue'),
+        },
+      ] as RouteRecordRaw[])
+    : []),
   { path: '/:catchAll(.*)', redirect: { name: 'home' } },
 ]
 
 export const router = createRouter({ history: createWebHistory(), routes })
 
 router.beforeEach((to) => {
+  if (to.name === 'ui-demo') return
   const auth = useAuthStore()
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
