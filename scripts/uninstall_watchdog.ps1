@@ -15,4 +15,4 @@ if (-not (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue)) 
 }
 
 Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
-Write-Host "✓ unregistered scheduled task '$TaskName'" -ForegroundColor Green
+Write-Host "[OK] unregistered scheduled task '$TaskName'" -ForegroundColor Green

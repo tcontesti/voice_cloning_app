@@ -3,7 +3,7 @@
     Register a Windows Scheduled Task that launches dev_start.ps1 at logon.
 
 .DESCRIPTION
-    Off by default — opt in by running this script explicitly. Registers a
+    Off by default -- opt in by running this script explicitly. Registers a
     per-user task (no admin required) that runs scripts\dev_start.ps1 hidden
     when the user signs in. Handy for the developer workstation that always
     sits next to the Spark.
@@ -43,7 +43,7 @@ $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries `
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger `
     -Settings $settings -Description "Auto-start voice_cloning_app dev tunnel + stack at logon."
 
-Write-Host "✓ registered scheduled task '$TaskName'" -ForegroundColor Green
+Write-Host "[OK] registered scheduled task '$TaskName'" -ForegroundColor Green
 Write-Host "  Run on demand:  Start-ScheduledTask -TaskName $TaskName" -ForegroundColor DarkGray
 Write-Host "  Inspect:        Get-ScheduledTask -TaskName $TaskName | Format-List *" -ForegroundColor DarkGray
 Write-Host "  Uninstall:      .\scripts\uninstall_watchdog.ps1" -ForegroundColor DarkGray

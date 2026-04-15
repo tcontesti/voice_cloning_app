@@ -32,4 +32,4 @@ foreach ($name in $tunnelNames) {
         }
 }
 
-Write-Host "✓ dev multi-host stopped" -ForegroundColor Green
+Write-Host "[OK] dev multi-host stopped" -ForegroundColor Green

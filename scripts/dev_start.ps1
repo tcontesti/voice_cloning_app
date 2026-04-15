@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Start dev multi-host stack on Windows: SSH tunnel → Spark + local docker + frontend HMR.
+    Start dev multi-host stack on Windows: SSH tunnel -> Spark + local docker + frontend HMR.
 
 .DESCRIPTION
     One-shot bootstrap for the private pilot:
@@ -37,15 +37,15 @@ $EnvExample  = "$EnvFile.example"
 
 Set-Location $Root
 
-# 0 — env file
+# 0 -- env file
 if (-not (Test-Path $EnvFile)) {
-    Write-Host "[setup] .env.multihost missing — copying from example" -ForegroundColor Yellow
+    Write-Host "[setup] .env.multihost missing -- copying from example" -ForegroundColor Yellow
     Copy-Item $EnvExample $EnvFile
     Write-Host "[setup] edit $EnvFile to match Spark's RabbitMQ / MinIO creds, then rerun." -ForegroundColor Yellow
     exit 1
 }
 
-# 1 — Tunnel (autossh preferred, ssh fallback)
+# 1 -- Tunnel (autossh preferred, ssh fallback)
 $autossh = Get-Command autossh -ErrorAction SilentlyContinue
 $useAutossh = ($autossh -ne $null) -and (-not $UseSSH)
 
@@ -76,7 +76,7 @@ if ($useAutossh) {
     $tunnelName = "autossh"
 } else {
     if (-not $UseSSH) {
-        Write-Host "[setup] autossh not found — falling back to plain ssh." -ForegroundColor Yellow
+        Write-Host "[setup] autossh not found -- falling back to plain ssh." -ForegroundColor Yellow
         Write-Host "        Tunnel will NOT auto-reconnect if Spark roams or sleeps." -ForegroundColor Yellow
         Write-Host "        Install: scoop install autossh   (or winget install eternallybored.autossh)" -ForegroundColor DarkGray
     }
@@ -92,7 +92,7 @@ if ($tunnel.HasExited) {
 }
 Write-Host "      $tunnelName PID=$($tunnel.Id) (kill with: Stop-Process $($tunnel.Id))" -ForegroundColor DarkGray
 
-# 2 — docker stack
+# 2 -- docker stack
 Write-Host "[2/3] docker compose up --build ..." -ForegroundColor Cyan
 docker compose -f $ComposeFile --env-file $EnvFile up -d --build
 if ($LASTEXITCODE -ne 0) {
@@ -100,18 +100,18 @@ if ($LASTEXITCODE -ne 0) {
     throw "docker compose failed (exit $LASTEXITCODE). Tunnel stopped."
 }
 
-# 3 — frontend Vite HMR in a new window
+# 3 -- frontend Vite HMR in a new window
 Write-Host "[3/3] starting Vite dev server in a new window ..." -ForegroundColor Cyan
 $frontendDir = Join-Path $Root "frontend"
 if (-not (Test-Path (Join-Path $frontendDir "node_modules"))) {
-    Write-Host "      (first run: installing npm deps — this will take a minute)" -ForegroundColor DarkGray
+    Write-Host "      (first run: installing npm deps -- this will take a minute)" -ForegroundColor DarkGray
     Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$frontendDir'; npm install; npm run dev"
 } else {
     Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$frontendDir'; npm run dev"
 }
 
 Write-Host ""
-Write-Host "✓ dev multi-host up" -ForegroundColor Green
+Write-Host "[OK] dev multi-host up" -ForegroundColor Green
 Write-Host "  Backend:    http://localhost:8000/health"
 Write-Host "  Nginx TLS:  https://localhost/"
 Write-Host "  Frontend:   http://localhost:5173"
