@@ -44,7 +44,8 @@ def upgrade() -> None:
         sa.UniqueConstraint("email", name="uq_users_email"),
         schema="app",
     )
-    op.create_index("ix_app_users_email", "users", ["email"], schema="app")
+    op.create_index("ix_app_users_email", "users", ["email"], schema="app",
+                    if_not_exists=True)
 
     op.create_table(
         "consents",
@@ -62,7 +63,8 @@ def upgrade() -> None:
         sa.Column("user_agent", sa.String(512)),
         schema="app",
     )
-    op.create_index("ix_app_consents_user_id", "consents", ["user_id"], schema="app")
+    op.create_index("ix_app_consents_user_id", "consents", ["user_id"], schema="app",
+                    if_not_exists=True)
 
     op.create_table(
         "audit_log",
@@ -78,8 +80,10 @@ def upgrade() -> None:
         sa.UniqueConstraint("hash", name="uq_audit_log_hash"),
         schema="audit",
     )
-    op.create_index("ix_audit_audit_log_actor_id", "audit_log", ["actor_id"], schema="audit")
-    op.create_index("ix_audit_audit_log_action", "audit_log", ["action"], schema="audit")
+    op.create_index("ix_audit_audit_log_actor_id", "audit_log", ["actor_id"],
+                    schema="audit", if_not_exists=True)
+    op.create_index("ix_audit_audit_log_action", "audit_log", ["action"],
+                    schema="audit", if_not_exists=True)
 
     # Block UPDATE/DELETE on audit_log via trigger (defense-in-depth; app role
     # also lacks those grants in prod).

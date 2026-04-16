@@ -42,7 +42,8 @@ def upgrade() -> None:
         ),
         schema="app",
     )
-    op.create_index("ix_app_voice_profiles_user_id", "voice_profiles", ["user_id"], schema="app")
+    op.create_index("ix_app_voice_profiles_user_id", "voice_profiles", ["user_id"],
+                    schema="app", if_not_exists=True)
 
     op.create_table(
         "syntheses",
@@ -84,8 +85,10 @@ def upgrade() -> None:
         sa.UniqueConstraint("s3_key_output", name="uq_syntheses_s3_key_output"),
         schema="app",
     )
-    op.create_index("ix_app_syntheses_user_id", "syntheses", ["user_id"], schema="app")
-    op.create_index("ix_app_syntheses_status", "syntheses", ["status"], schema="app")
+    op.create_index("ix_app_syntheses_user_id", "syntheses", ["user_id"],
+                    schema="app", if_not_exists=True)
+    op.create_index("ix_app_syntheses_status", "syntheses", ["status"],
+                    schema="app", if_not_exists=True)
 
 
 def downgrade() -> None:

@@ -40,13 +40,15 @@ def upgrade() -> None:
         sa.UniqueConstraint("s3_key", name="uq_recordings_s3_key"),
         schema="app",
     )
-    op.create_index("ix_app_recordings_user_id", "recordings", ["user_id"], schema="app")
+    op.create_index("ix_app_recordings_user_id", "recordings", ["user_id"],
+                    schema="app", if_not_exists=True)
     op.create_index(
         "ix_app_recordings_user_active",
         "recordings",
         ["user_id", "created_at"],
         schema="app",
         postgresql_where=sa.text("deleted_at IS NULL"),
+        if_not_exists=True,
     )
 
 
