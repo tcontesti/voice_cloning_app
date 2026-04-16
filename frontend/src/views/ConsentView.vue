@@ -22,6 +22,11 @@ const track = ref<HTMLDivElement | null>(null)
 const knobPct = ref(0)
 const dragging = ref(false)
 const reducedMotion = ref(false)
+// Handle to the post-signing redirect timeout so we can cancel it if the
+// component unmounts (user hits back before 1.2s elapses). Navigating a
+// dead component silently no-ops today, but in dev HMR it surfaces as
+// "router.push called from an unmounted component" warnings.
+let redirectTimer: ReturnType<typeof setTimeout> | null = null
 
 onMounted(async () => {
   reducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -73,7 +78,7 @@ async function accept() {
   try {
     await consentApi.accept(text.value.version, text.value.text_hash)
     message.value = { kind: 'ok', text: t('consent.signed') }
-    setTimeout(() => router.push({ name: 'record' }), 1200)
+    redirectTimer = setTimeout(() => router.push({ name: 'record' }), 1200)
   } catch (e) {
     message.value =
       e instanceof ApiError && e.status === 409
@@ -85,7 +90,13 @@ async function accept() {
   }
 }
 
-onBeforeUnmount(() => { dragging.value = false })
+onBeforeUnmount(() => {
+  dragging.value = false
+  if (redirectTimer !== null) {
+    clearTimeout(redirectTimer)
+    redirectTimer = null
+  }
+})
 </script>
 
 <template>
