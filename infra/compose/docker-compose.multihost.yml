@@ -89,6 +89,12 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 15s
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     restart: unless-stopped
 
@@ -100,7 +106,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    depends_on: [backend]
+    depends_on:
+      backend: {condition: service_healthy}
     restart: unless-stopped
 
 volumes:
