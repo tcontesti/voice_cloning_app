@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 
-const auth = useAuthStore()
-onMounted(() => auth.bootstrapFromStorage())
+// Auth bootstrap runs in main.ts before app.mount() so the first navigation
+// guard already sees the rehydrated token. Don't re-call it here — a second
+// bootstrap fires a redundant /auth/me and briefly flips the UI to loading.
 </script>
 
 <template>
