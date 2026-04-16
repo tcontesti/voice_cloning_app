@@ -34,6 +34,11 @@ async def lifespan(_: FastAPI):
     except Exception as e:
         log.warning("storage.bootstrap_failed", error=str(e))
     yield
+    # Drain the WS Redis pool so uvicorn shuts down cleanly. Import here
+    # to keep the lifespan declaration free of api-layer imports at module
+    # load (avoids circulars during alembic/worker imports).
+    from app.api.ws_jobs import shutdown_pool
+    await shutdown_pool()
     log.info("app.stop")
 
 
