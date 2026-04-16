@@ -37,6 +37,13 @@ celery_app.conf.update(
     task_reject_on_worker_lost=True,
     worker_prefetch_multiplier=1,    # one job at a time per worker — TTS is heavy
     worker_max_tasks_per_child=50,   # periodic recycling against memory drift
+    # Bound every task. Without these a CUDA deadlock or an adapter hang
+    # would park the worker for the UI's whole session. Soft limit raises
+    # SoftTimeLimitExceeded so the task gets a chance to clean up and mark
+    # the row `failed`; hard limit kills the worker process as a last
+    # resort. Numbers sized to the slowest model (qwen3tts) + headroom.
+    task_soft_time_limit=600,   # 10 min
+    task_time_limit=900,        # 15 min
     task_default_queue="synth.chatterbox",
     task_default_exchange="synth",
     task_default_routing_key="synth.chatterbox",
