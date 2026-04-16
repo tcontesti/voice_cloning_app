@@ -1,8 +1,12 @@
 """WebSocket: per-job progress stream backed by Redis pub/sub.
 
-Auth: token passed as query param `?token=<jwt>` since browsers can't set
-Authorization headers on WebSocket. The token is validated identically to
-HTTP requests; on failure we close with policy-violation 1008.
+Auth: browsers can't set `Authorization` headers on WebSocket, so the
+token travels in the `Sec-WebSocket-Protocol` subprotocol handshake.
+The client sends protocols `["bearer", "<jwt>"]`, we extract the token,
+validate identically to HTTP and echo `"bearer"` back on accept.
+
+A legacy `?token=<jwt>` query fallback stays wired for local scripts
+(Python `websockets`, curl-ish). If both are present subprotocol wins.
 """
 
 from __future__ import annotations
@@ -61,13 +65,35 @@ async def _resolve_user_id(token: str | None) -> UUID | None:
         return None
 
 
+def _extract_bearer_subprotocol(protocols: list[str] | None) -> str | None:
+    """Expect ["bearer", "<jwt>"] (browser) or a single "bearer.<jwt>"
+    variant (awkward clients that only accept one value). Returns the raw
+    JWT or None if the handshake isn't ours."""
+    if not protocols:
+        return None
+    norm = [p.strip() for p in protocols if p]
+    if len(norm) >= 2 and norm[0] == "bearer":
+        return norm[1]
+    for p in norm:
+        if p.startswith("bearer."):
+            return p[len("bearer."):]
+    return None
+
+
 @router.websocket("/ws/jobs/{synthesis_id}")
 async def job_progress(
     websocket: WebSocket,
     synthesis_id: UUID,
     token: str | None = Query(default=None),
 ) -> None:
-    user_id = await _resolve_user_id(token)
+    # Prefer the subprotocol-carried token (doesn't land in nginx access
+    # logs, referer headers, or browser history). Fall back to the query
+    # param so local diagnostic scripts keep working.
+    protocols = websocket.scope.get("subprotocols") or []
+    subprotocol_token = _extract_bearer_subprotocol(protocols)
+    effective_token = subprotocol_token or token
+
+    user_id = await _resolve_user_id(effective_token)
     if user_id is None:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
@@ -90,7 +116,12 @@ async def job_progress(
             },
         }
 
-    await websocket.accept()
+    # Echo `bearer` so the browser's handshake succeeds. Query-only clients
+    # get no subprotocol echoed, which is fine — they didn't request one.
+    if subprotocol_token is not None:
+        await websocket.accept(subprotocol="bearer")
+    else:
+        await websocket.accept()
     await websocket.send_text(json.dumps(snapshot))
 
     r = aioredis.Redis(connection_pool=_get_pool())

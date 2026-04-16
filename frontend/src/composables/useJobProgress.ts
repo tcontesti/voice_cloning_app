@@ -1,8 +1,10 @@
 /**
  * WebSocket subscriber for /ws/jobs/{id} progress events.
  *
- * Token is appended as ?token=<jwt> because browsers can't set Authorization
- * headers on WebSocket. Same token the REST client uses.
+ * Auth travels in the `Sec-WebSocket-Protocol` handshake as
+ * `["bearer", <jwt>]`. Using the subprotocol keeps the token out of
+ * nginx access logs, referer headers, and window.history — the query
+ * param variant (still accepted by the server) ended up in all three.
  */
 import { ref, onBeforeUnmount, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
@@ -37,8 +39,11 @@ export function useJobProgress(jobId: () => string | null) {
     if (!auth.token) { error.value = 'no token'; return }
 
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const url = `${proto}//${location.host}${WS_PREFIX}/ws/jobs/${id}?token=${encodeURIComponent(auth.token)}`
-    ws = new WebSocket(url)
+    const url = `${proto}//${location.host}${WS_PREFIX}/ws/jobs/${id}`
+    // WebSocket subprotocols carry the token in the handshake (Sec-WebSocket-Protocol
+    // request header). The server reads protocols[0] == "bearer" + protocols[1] == jwt
+    // and echoes `bearer` back on accept. See backend/app/api/ws_jobs.py.
+    ws = new WebSocket(url, ['bearer', auth.token])
     ws.onopen = () => { connected.value = true }
     ws.onerror = () => { error.value = 'websocket error' }
     ws.onclose = () => { connected.value = false }
