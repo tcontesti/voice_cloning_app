@@ -12,7 +12,7 @@
   any backend endpoint beyond the two it already uses.
 -->
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { Mic, Square, Plus, Upload, Trash2, Play, Check } from 'lucide-vue-next'
 
 import Knob from '@/ui/primitives/Knob.vue'
@@ -63,10 +63,17 @@ const deviceLabel = ref('')
 const uploadBusy = ref(false)
 const globalError = ref<string | null>(null)
 
-const audioCtx = shallowRef<AudioContext | null>(null)
+// Decoding AudioBuffers for thumbnail + SNR reuses the recorder's
+// AudioContext. A previous draft spun up a second one here for decode,
+// which leaked when the user changed device (the old ctx stayed
+// suspended, GC never got it). One AudioContext per component is plenty.
 function getAudioCtx(): AudioContext {
-  if (!audioCtx.value) audioCtx.value = new AudioContext()
-  return audioCtx.value
+  if (!recorder.audioContext.value) {
+    // Recorder lazily creates the ctx on open(); if the user uploads
+    // files before granting mic permission we still need one to decode.
+    recorder.audioContext.value = new AudioContext()
+  }
+  return recorder.audioContext.value
 }
 
 async function openMic(deviceId?: string) {
@@ -182,9 +189,27 @@ function onDrop(e: DragEvent) {
   if (e.dataTransfer?.files.length) void onUploadFiles(e.dataTransfer.files)
 }
 
+// Active HTMLAudioElement per take id. We hold the reference so deleting
+// a take can pause + detach the src BEFORE revokeObjectURL, otherwise the
+// player emits an opaque NotSupportedError mid-playback when the blob URL
+// vanishes under it.
+const playing = new Map<string, HTMLAudioElement>()
+
+function stopPlayback(id: string) {
+  const a = playing.get(id)
+  if (!a) return
+  try {
+    a.pause()
+    a.src = ''   // release the object URL handle before revoke
+    a.load()
+  } catch { /* noop */ }
+  playing.delete(id)
+}
+
 function deleteTake(id: string) {
   const idx = takes.value.findIndex((t) => t.id === id)
   if (idx < 0) return
+  stopPlayback(id)
   URL.revokeObjectURL(takes.value[idx].url)
   takes.value.splice(idx, 1)
 }
@@ -197,8 +222,15 @@ function toggleMark(id: string) {
 function playTake(id: string) {
   const t = takes.value.find((x) => x.id === id)
   if (!t) return
+  // Replacing an existing playback element is fine — it pauses naturally
+  // when its src changes, but be explicit so the Map stays truthful.
+  stopPlayback(id)
   const audio = new Audio(t.url)
-  void audio.play()
+  const release = () => playing.delete(id)
+  audio.addEventListener('ended', release, { once: true })
+  audio.addEventListener('error', release, { once: true })
+  playing.set(id, audio)
+  void audio.play().catch(release)
 }
 
 const markedCount = computed(() => takes.value.filter((t) => t.marked).length)
@@ -266,9 +298,12 @@ onMounted(() => {
 })
 onBeforeUnmount(() => {
   window.removeEventListener('beforeunload', onBeforeUnload)
-  for (const t of takes.value) URL.revokeObjectURL(t.url)
+  for (const t of takes.value) {
+    stopPlayback(t.id)
+    URL.revokeObjectURL(t.url)
+  }
+  // recorder.close() owns the AudioContext lifecycle — don't double-close.
   recorder.close()
-  try { void audioCtx.value?.close() } catch { /* noop */ }
 })
 
 watch(() => recorder.state.value, (s) => {
