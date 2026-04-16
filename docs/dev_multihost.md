@@ -210,3 +210,33 @@ con el estado agregado. Cuando la Spark está offline:
   sigue en RabbitMQ y se procesará cuando la Spark vuelva.
 
 `RecordView` funciona igual — las grabaciones van al MinIO local del PC.
+
+### Dependencia crítica del reverse-tunnel Redis (puerto 6380)
+
+Los workers Celery en la Spark usan como **result backend** el Redis que corre
+en el PC, alcanzado a través del reverse tunnel `-R 6380:localhost:6379`. Esto
+tiene una implicación operativa que no es obvia:
+
+- **Si el reverse `-R 6380` no se establece, los workers consumen el mensaje
+  de RabbitMQ pero no pueden persistir el resultado de la task.** La fila
+  `app.syntheses` queda en `queued` para siempre desde el punto de vista de
+  la UI, aunque el audio sí se genere y quede en MinIO.
+- Síntoma observable: `docker exec vcapp-multihost-backend-1 journalctl …` del
+  worker (o `ssh spark "journalctl --user -u worker_chatterbox -n 50"`) muestra
+  `redis.exceptions.ConnectionError: Error 111 connecting to localhost:6380.
+  Connection refused.`
+- El túnel puede fallar al *reestablecerse* (no al arrancar) cuando una sesión
+  ssh previa dejó el puerto 5433 o 6380 bound en la Spark; sin
+  `ExitOnForwardFailure=yes` la sesión ssh sigue viva pero los `-R` no
+  re-bindan. Confirmarlo con `ssh spark "ss -tln | grep -E ':(5433|6380)'"`
+  desde otra shell — si los puertos aparecen listados pero `Invoke-RestMethod
+  http://localhost:8000/system/health` devuelve workers `offline` en un job
+  real, los binds son de una sesión huérfana.
+- Recuperación: `ssh spark "fuser -n tcp 5433 6380"`, matar esos sshd
+  huérfanos, y relanzar el túnel (`.\scripts\dev_stop.ps1` + `dev_start.ps1`).
+  El `ClientAliveInterval 30` recomendado en el sshd de la Spark reduce la
+  ventana en la que esto puede pasar.
+- Alternativa de diseño (no implementada): mover el result backend a un Redis
+  local de la Spark. Elimina esta dependencia pero la API en el PC pierde
+  visibilidad de estados intermedios más allá de lo que emite el pub/sub.
+  Evaluación técnica en `SUMMARY_pc_medium.md`.
