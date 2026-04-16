@@ -41,7 +41,10 @@ function draw() {
   const analyser = props.analyser
   if (!canvas) { raf = requestAnimationFrame(draw); return }
   const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  // If the browser momentarily denies 2d (hibernated tab, backgrounded
+  // compositor, context lost), reschedule — a bare `return` used to kill
+  // the loop for the lifetime of the component.
+  if (!ctx) { raf = requestAnimationFrame(draw); return }
 
   const dpr = window.devicePixelRatio || 1
   const w = props.width
