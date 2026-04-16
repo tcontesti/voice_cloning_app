@@ -18,13 +18,18 @@ Write-Host "[1/2] docker compose down ..." -ForegroundColor Cyan
 docker compose -f $ComposeFile --env-file $EnvFile down | Out-Null
 
 Write-Host "[2/2] killing tunnels to '$SparkAlias' ..." -ForegroundColor Cyan
-# autossh on Windows wraps an inner ssh.exe; kill both. Filter by the forwarded
-# ports so we don't touch unrelated ssh sessions on the same host.
+# autossh on Windows wraps an inner ssh.exe; kill both. A generic `-[LR]\s+\d`
+# filter plus SparkAlias used to match ANY ssh-to-spark session the user had
+# open (a non-tunnel shell to poke at logs, for example). Tighten by requiring
+# one of the specific forwarded ports dev_start.ps1 binds, so nothing else
+# gets killed even if someone has a vanilla ssh to spark running.
+$tunnelPortsRegex = '5682|9010|15682|9011|5433|6380'
 $tunnelNames = @('autossh.exe', 'ssh.exe')
 foreach ($name in $tunnelNames) {
     Get-CimInstance Win32_Process -Filter "Name = '$name'" |
         Where-Object {
-            $_.CommandLine -match "-[LR]\s+\d" -and $_.CommandLine -match $SparkAlias
+            $_.CommandLine -match $SparkAlias -and
+            $_.CommandLine -match "-[LR]\s+($tunnelPortsRegex)\b"
         } |
         ForEach-Object {
             Write-Host "  stopping $name PID $($_.ProcessId)" -ForegroundColor DarkGray
