@@ -66,7 +66,13 @@ $forwards = @(
 )
 $commonOpts = @(
     "-N",
-    "-o", "ServerAliveInterval=15",
+    # 30s * 3 misses = ~90s before autossh notices and reconnects. The old
+    # 15s value double-fired on transient LTE blips (laptop -> phone tether)
+    # and kicked the tunnel while the link was only briefly noisy. The Spark
+    # side of this pair must stay slightly more permissive (sshd
+    # ClientAliveInterval=30, ClientAliveCountMax=2 -> 60s) so it reaps
+    # half-open sessions before autossh's next retry attempt.
+    "-o", "ServerAliveInterval=30",
     "-o", "ServerAliveCountMax=3",
     # Intentionally NOT setting ExitOnForwardFailure — see comment on -R above.
     # ServerAlive* still detects a dead transport and triggers autossh restart.
