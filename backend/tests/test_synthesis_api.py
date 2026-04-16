@@ -174,6 +174,50 @@ async def test_create_synthesis_routes_omnivoice_to_its_queue(
         assert send.call_args.kwargs["kwargs"]["model"] == "omnivoice"
 
 
+@pytest.mark.parametrize("model,expected_queue", [
+    ("chatterbox", "synth.chatterbox"),
+    ("omnivoice", "synth.omnivoice"),
+    ("qwen3tts", "synth.qwen3tts"),
+])
+async def test_create_synthesis_routes_every_model_to_its_own_queue(
+    client: AsyncClient, session: AsyncSession, model: str, expected_queue: str,
+) -> None:
+    """Guardrail on the Celery send_task call shape for every supported model.
+
+    A subtle regression we want to catch: silently dropping `queue=...` falls
+    back to `synth.chatterbox` (task_default_queue). The pilot would route
+    every voice job to the Chatterbox worker and starve the rest. Assert the
+    exact kwarg shape so that kind of change trips a test instead of a user.
+    """
+    _, headers = await _login(client, session)
+    rec_id = await _upload_recording(client, headers)
+    profile = (await client.post(
+        "/profiles", headers=headers,
+        json={"name": "auto", "reference_ids": [rec_id]},
+    )).json()
+
+    with patch("app.workers.celery_app.celery_app.send_task") as send:
+        r = await client.post(
+            "/synthesis", headers=headers,
+            json={"profile_id": profile["id"], "model": model, "text": "hola"},
+        )
+        assert r.status_code == 201, r.text
+        body = r.json()
+
+    send.assert_called_once()
+    args, kwargs = send.call_args
+    # Positional: exact task name — drift here would hit the wrong module.
+    assert args == ("app.workers.tasks.synthesize",), args
+    # kwargs: ONLY queue + kwargs. Anything else (countdown, priority, eta,
+    # routing_key override) is a regression we want to see.
+    assert set(kwargs.keys()) == {"queue", "kwargs"}, kwargs
+    assert kwargs["queue"] == expected_queue
+    assert kwargs["kwargs"] == {
+        "synthesis_id": body["id"],
+        "model": model,
+    }
+
+
 async def test_create_synthesis_rejects_text_too_long(
     client: AsyncClient, session: AsyncSession
 ) -> None:
@@ -232,11 +276,16 @@ async def test_audit_chain_remains_consistent_after_synthesis_workflow(
         "/profiles", headers=headers,
         json={"name": "auto", "reference_ids": [rec_id]},
     )).json()
-    with patch("app.workers.celery_app.celery_app.send_task"):
+    with patch("app.workers.celery_app.celery_app.send_task") as send:
         await client.post(
             "/synthesis", headers=headers,
             json={"profile_id": profile["id"], "model": "chatterbox", "text": "x"},
         )
+        # Chain verification is the main point of this test, but without
+        # asserting send_task fired we could regress the enqueue path and
+        # still pass (audit-only smoke). Keep both.
+        send.assert_called_once()
+        assert send.call_args.kwargs["queue"] == "synth.chatterbox"
 
     rows = await audit_svc.list_all(session)
     ok, broken = verify_chain(rows)
