@@ -73,6 +73,9 @@ def synthesize(self, *, synthesis_id: str, model: str) -> dict:
     job = synthesis_id
     SessionFn = _session_factory()
     db: Session = SessionFn()
+    # Tracks on-disk reference WAV so we can unlink it in `finally`, even when
+    # the adapter crashes mid-synthesis — otherwise /tmp/vcref-*.wav piles up.
+    ref_path: str | None = None
     try:
         emit(job, "queued", 5, "preparando")
         syn = db.get(Synthesis, UUID(synthesis_id))
@@ -139,15 +142,11 @@ def synthesize(self, *, synthesis_id: str, model: str) -> dict:
         syn.aasist_score = aasist_score
         syn.status = SynthesisStatus.succeeded
         syn.completed_at = datetime.now(timezone.utc)
-        db.commit()
 
-        # Hard policy: missing watermark on a model that is supposed to embed
-        # one means the pipeline lost it (or model swap upstream) — alert.
-        if not wm_result.detected:
-            log.error("watermark.missing", synthesis_id=str(syn.id), scheme=wm_result.scheme)
-
-        # Run audit append in its own transaction so we don't depend on async.
-        from app.db.models.audit import AuditLog  # noqa: F401  (metadata)
+        # Audit append has to land atomically with the status flip. A prior
+        # split-transaction layout (status commit → audit commit) left the
+        # audit row missing if the worker crashed between them, breaking the
+        # hash chain's invariant that every state change is recorded.
         audit_payload = {
             "model": model,
             "duration_s": round(duration_s, 3),
@@ -159,6 +158,11 @@ def synthesize(self, *, synthesis_id: str, model: str) -> dict:
         _audit_sync(db, actor_id=syn.user_id, action="synthesis.succeeded",
                     resource_type="synthesis", resource_id=str(syn.id), payload=audit_payload)
         db.commit()
+
+        # Hard policy: missing watermark on a model that is supposed to embed
+        # one means the pipeline lost it (or model swap upstream) — alert.
+        if not wm_result.detected:
+            log.error("watermark.missing", synthesis_id=str(syn.id), scheme=wm_result.scheme)
 
         emit(job, "done", 100, "completado",
              watermark_verified=wm_result.detected, aasist_score=aasist_score)
@@ -189,6 +193,12 @@ def synthesize(self, *, synthesis_id: str, model: str) -> dict:
         emit(synthesis_id, "failed", 100, str(e))
         raise
     finally:
+        if ref_path is not None:
+            try:
+                from pathlib import Path
+                Path(ref_path).unlink(missing_ok=True)
+            except Exception:
+                log.warning("reference.tempfile_cleanup_failed", path=ref_path, exc_info=True)
         db.close()
 
 
