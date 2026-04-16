@@ -100,7 +100,30 @@
     "submit": "Generar",
     "wait": "Esperando…",
     "watermarkOk": "Watermark verificado",
-    "watermarkMissing": "Watermark NO detectado"
+    "watermarkMissing": "Watermark NO detectado",
+    "blockedBackend": "Servidor sin respuesta. Reintenta en unos segundos.",
+    "blockedSpark": "Spark desconectada. Levántala e intenta de nuevo."
+  },
+  "system": {
+    "status": {
+      "ok": "SISTEMA OK",
+      "sparkOffline": "SPARK OFFLINE",
+      "noService": "SIN SERVICIO"
+    },
+    "hint": {
+      "sparkDown": "Puedes grabar referencias — no requiere GPU. La síntesis queda en cola hasta que la Spark vuelva.",
+      "backendDown": "El servidor no responde. Revisa tu conexión o contacta con soporte."
+    }
+  },
+  "job": {
+    "stalled": "Conexión con Spark perdida (sin avance en {s}s). El job está encolado y se procesará cuando la Spark vuelva."
+  },
+  "recorder": {
+    "maxTakesReached": "Límite de {n} takes alcanzado.",
+    "markAtLeastOne": "Marca al menos una take como referencia.",
+    "noTakeUploaded": "Ninguna take pudo subirse.",
+    "decodeFailed": "No se pudo decodificar {name}: {reason}",
+    "autoProfileNamePrefix": "Perfil"
   },
   "common": {
     "loading": "Cargando…",

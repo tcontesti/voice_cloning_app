@@ -5,10 +5,12 @@
 -->
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import LED from '@/ui/primitives/LED.vue'
 import { useSystemHealth } from '@/composables/useSystemHealth'
 import type { ServiceStatus, WorkerName, WorkerStatus } from '@/api/system'
 
+const { t } = useI18n()
 const { data, degraded } = useSystemHealth()
 
 const tint = computed<'green' | 'amber' | 'red'>(() => {
@@ -18,9 +20,9 @@ const tint = computed<'green' | 'amber' | 'red'>(() => {
 })
 
 const label = computed(() => {
-  if (degraded.value === 'backend-down') return 'SIN SERVICIO'
-  if (degraded.value === 'spark-down') return 'SPARK OFFLINE'
-  return 'SISTEMA OK'
+  if (degraded.value === 'backend-down') return t('system.status.noService')
+  if (degraded.value === 'spark-down') return t('system.status.sparkOffline')
+  return t('system.status.ok')
 })
 
 function svcLabel(s: ServiceStatus | undefined): string {
@@ -82,11 +84,10 @@ const workerEntries = computed<Array<[WorkerName, WorkerStatus]>>(() => {
       </dl>
 
       <p v-if="degraded === 'spark-down'" class="sysb__hint">
-        Puedes grabar referencias — no requiere GPU. La síntesis queda en cola hasta
-        que la Spark vuelva.
+        {{ t('system.hint.sparkDown') }}
       </p>
       <p v-else-if="degraded === 'backend-down'" class="sysb__hint sysb__hint--err">
-        El servidor no responde. Revisa tu conexión o contacta con soporte.
+        {{ t('system.hint.backendDown') }}
       </p>
     </div>
   </div>

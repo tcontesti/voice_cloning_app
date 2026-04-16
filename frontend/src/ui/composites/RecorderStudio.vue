@@ -13,7 +13,10 @@
 -->
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Mic, Square, Plus, Upload, Trash2, Play, Check } from 'lucide-vue-next'
+
+const { t } = useI18n()
 
 import Knob from '@/ui/primitives/Knob.vue'
 import LED from '@/ui/primitives/LED.vue'
@@ -93,7 +96,7 @@ async function onSelectDevice(info: MediaDeviceInfo) {
 
 function onStartRecord() {
   if (takes.value.length >= MAX_TAKES) {
-    globalError.value = `Límite de ${MAX_TAKES} takes alcanzado.`
+    globalError.value = t('recorder.maxTakesReached', { n: MAX_TAKES })
     return
   }
   if (recorder.state.value !== 'ready') {
@@ -176,7 +179,10 @@ async function onUploadFiles(files: FileList) {
       const take = await buildTakeFromBlob(f)
       takes.value.push(take)
     } catch (e) {
-      globalError.value = `No se pudo decodificar ${f.name}: ${(e as Error).message}`
+      globalError.value = t('recorder.decodeFailed', {
+        name: f.name,
+        reason: (e as Error).message,
+      })
     }
   }
 }
@@ -245,7 +251,7 @@ function snrColour(db: number | null): 'green' | 'amber' | 'red' | 'off' {
 
 async function createProfile() {
   if (!markedCount.value) {
-    globalError.value = 'Marca al menos una take como referencia.'
+    globalError.value = t('recorder.markAtLeastOne')
     return
   }
   uploadBusy.value = true
@@ -270,10 +276,11 @@ async function createProfile() {
       }
     }
     if (!referenceIds.length) {
-      globalError.value = 'Ninguna take pudo subirse.'
+      globalError.value = t('recorder.noTakeUploaded')
       return
     }
-    const name = profileName.value.trim() || `Perfil ${new Date().toISOString().slice(0, 16)}`
+    const name = profileName.value.trim() ||
+      `${t('recorder.autoProfileNamePrefix')} ${new Date().toISOString().slice(0, 16)}`
     const profile = await profilesApi.create(name, referenceIds)
     emit('profileCreated', profile)
     // Marcamos todo como synced sin borrar (el usuario puede seguir iterando).

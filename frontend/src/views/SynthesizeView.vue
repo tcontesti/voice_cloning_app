@@ -88,8 +88,8 @@ const submitBlocked = computed(() => {
   return !selectedModelOnline.value
 })
 const submitBlockedReason = computed(() => {
-  if (degraded.value === 'backend-down') return 'Servidor sin respuesta. Reintenta en unos segundos.'
-  if (!selectedModelOnline.value) return 'Spark desconectada. Levántala e intenta de nuevo.'
+  if (degraded.value === 'backend-down') return t('synth.blockedBackend')
+  if (!selectedModelOnline.value) return t('synth.blockedSpark')
   return ''
 })
 

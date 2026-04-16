@@ -5,9 +5,12 @@
 -->
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import SegmentedDisplay from '@/ui/primitives/SegmentedDisplay.vue'
 import LED from '@/ui/primitives/LED.vue'
 import { formatTimecode } from '@/composables/useTransport'
+
+const { t } = useI18n()
 
 const props = withDefaults(
   defineProps<{
@@ -141,10 +144,7 @@ const tint = computed<'green' | 'amber' | 'red' | 'blue'>(() => {
 
     <div v-if="stalled" class="jm__stall" role="status">
       <LED color="amber" on pulse size="xs" />
-      <span>
-        Conexión con Spark perdida (sin avance en {{ sinceProgressS.toFixed(0) }}s).
-        El job está encolado y se procesará cuando la Spark vuelva.
-      </span>
+      <span>{{ t('job.stalled', { s: sinceProgressS.toFixed(0) }) }}</span>
     </div>
   </div>
 </template>
