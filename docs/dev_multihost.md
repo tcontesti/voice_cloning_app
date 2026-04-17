@@ -177,24 +177,52 @@ vía DERP.
 No hay integración en el código — Tailscale es una capa de red, no una
 dependencia de la app.
 
-### Watchdog opcional (Task Scheduler de Windows)
+### Watchdog del túnel (Task Scheduler de Windows)
 
-`scripts\install_watchdog.ps1` registra una tarea programada que lanza
-`dev_start.ps1` al iniciar sesión. Off por defecto: activarla registra una
-tarea en la cuenta del usuario sin pedir permiso cada vez que cambia de
-rama, lo cual es mal patrón si varias personas clonan el repo.
+`scripts\tunnel_watchdog.ps1` se registra como tarea programada **"VCApp
+Tunnel Watchdog"** que se ejecuta cada minuto en la cuenta del usuario (sin
+admin). En cada tick:
 
-Para activarla:
+1. Si **no** existe el flag `%LOCALAPPDATA%\vcapp\tunnel_enabled.flag` → el
+   watchdog sale silenciosamente (es un no-op). Así `dev_stop.ps1` puede
+   pausarlo borrando solo el flag, sin desregistrar la tarea.
+2. Si `autossh.exe` ya corre → no hace nada.
+3. Si `autossh.exe` no está → lee el flag (JSON con `SparkAlias`,
+   `AutosshPath`, `SshPath` capturados al arrancar) y relanza autossh con los
+   mismos `-L`/`-R` que `dev_start.ps1`. Detección de la caída ≤60s,
+   recuperación visible en la UI ≤90s.
+
+`dev_start.ps1` automatiza todo el ciclo cuando hay autossh disponible:
+
+- crea `%LOCALAPPDATA%\vcapp\tunnel_enabled.flag` con el JSON de contexto,
+- llama a `install_watchdog.ps1` (idempotente: hace
+  unregister-then-register, así la tarea siempre refleja el script actual).
+
+`dev_stop.ps1` borra el flag **antes** de matar los procesos para evitar que
+un tick concurrente del watchdog resucite autossh durante el teardown.
+
+Logs: `%LOCALAPPDATA%\vcapp\logs\tunnel_watchdog.log`. Solo se escriben
+cambios de estado (respawn, error). Un fichero vacío o sin entradas recientes
+significa que autossh ha estado vivo todo el tiempo. Para verificar que la
+tarea está corriendo aunque no haya escrito nada:
 
 ```powershell
-.\scripts\install_watchdog.ps1
+Get-ScheduledTaskInfo -TaskName "VCApp Tunnel Watchdog"   # mira LastRunTime
 ```
 
-Para desinstalarla:
+Si el camino degradado (`-UseSSH` o autossh no instalado) está activo, el
+watchdog **no** se registra: `ssh` plano no tiene semántica de respawn y el
+flag nunca se crea.
+
+Desinstalación:
 
 ```powershell
 .\scripts\uninstall_watchdog.ps1
 ```
+
+Esto desregistra `"VCApp Tunnel Watchdog"`, limpia la antigua tarea
+`"VoiceCloningDevStart"` (versión anterior, lanzaba dev_start al login)
+si todavía existe, y borra el flag.
 
 ### Modo degradado en la UI
 

@@ -14,6 +14,14 @@ $EnvFile     = Join-Path $Root "infra\compose\.env.multihost"
 
 Set-Location $Root
 
+# Disable the watchdog FIRST so a tick fired between docker-down and our
+# Stop-Process below cannot resurrect autossh while we're tearing down.
+$flagPath = Join-Path $env:LOCALAPPDATA "vcapp\tunnel_enabled.flag"
+if (Test-Path $flagPath) {
+    Remove-Item -LiteralPath $flagPath -Force
+    Write-Host "[watchdog] flag removed (scheduled task remains -- uninstall via .\scripts\uninstall_watchdog.ps1)" -ForegroundColor DarkGray
+}
+
 Write-Host "[1/2] docker compose down ..." -ForegroundColor Cyan
 docker compose -f $ComposeFile --env-file $EnvFile down | Out-Null
 

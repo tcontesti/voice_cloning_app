@@ -110,6 +110,25 @@ if ($tunnel.HasExited) {
 }
 Write-Host "      $tunnelName PID=$($tunnel.Id) (kill with: Stop-Process $($tunnel.Id))" -ForegroundColor DarkGray
 
+# 1b -- watchdog wiring (autossh only; ssh fallback has no respawn semantics)
+if ($useAutossh) {
+    $appDir   = Join-Path $env:LOCALAPPDATA "vcapp"
+    $flagPath = Join-Path $appDir "tunnel_enabled.flag"
+    if (-not (Test-Path $appDir)) {
+        New-Item -ItemType Directory -Path $appDir -Force | Out-Null
+    }
+    @{
+        SparkAlias  = $SparkAlias
+        AutosshPath = $autossh.Source
+        SshPath     = $sshWin
+        RepoRoot    = $Root
+        CreatedAt   = (Get-Date).ToString("o")
+    } | ConvertTo-Json | Set-Content -LiteralPath $flagPath -Encoding UTF8
+
+    & (Join-Path $Root "scripts\install_watchdog.ps1") | Out-Null
+    Write-Host "      watchdog: enabled (flag $flagPath)" -ForegroundColor DarkGray
+}
+
 # 2 -- docker stack
 Write-Host "[2/3] docker compose up --build ..." -ForegroundColor Cyan
 docker compose -f $ComposeFile --env-file $EnvFile up -d --build
