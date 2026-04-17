@@ -186,8 +186,16 @@ admin). En cada tick:
 1. Si **no** existe el flag `%LOCALAPPDATA%\vcapp\tunnel_enabled.flag` → el
    watchdog sale silenciosamente (es un no-op). Así `dev_stop.ps1` puede
    pausarlo borrando solo el flag, sin desregistrar la tarea.
-2. Si `autossh.exe` ya corre → no hace nada.
-3. Si `autossh.exe` no está → lee el flag (JSON con `SparkAlias`,
+2. Si `autossh.exe` corre **y** `localhost:5682` (forward de RabbitMQ AMQP)
+   responde a TCP → tunnel sano, no hace nada. La existencia del proceso no
+   basta: autossh en Windows puede quedarse zombie (proceso vivo sin hijo
+   ssh y sin puerto abierto), por eso se prueba el puerto.
+3. Si `autossh.exe` corre pero el puerto está muerto **más allá** de un
+   periodo de gracia de 30s (para no matar a autossh durante el handshake
+   inicial cuando Spark es brevemente inalcanzable) → mata el zombie
+   (`autossh.exe` + cualquier `ssh.exe` huérfano que retenga los puertos
+   forwardeados a `spark`) y cae al paso 4.
+4. Si `autossh.exe` no está → lee el flag (JSON con `SparkAlias`,
    `AutosshPath`, `SshPath` capturados al arrancar) y relanza autossh con los
    mismos `-L`/`-R` que `dev_start.ps1`. Detección de la caída ≤60s,
    recuperación visible en la UI ≤90s.
@@ -202,9 +210,9 @@ admin). En cada tick:
 un tick concurrente del watchdog resucite autossh durante el teardown.
 
 Logs: `%LOCALAPPDATA%\vcapp\logs\tunnel_watchdog.log`. Solo se escriben
-cambios de estado (respawn, error). Un fichero vacío o sin entradas recientes
-significa que autossh ha estado vivo todo el tiempo. Para verificar que la
-tarea está corriendo aunque no haya escrito nada:
+cambios de estado (respawn, zombie-kill, error). Un fichero vacío o sin
+entradas recientes significa que autossh ha estado sano todo el tiempo. Para
+verificar que la tarea está corriendo aunque no haya escrito nada:
 
 ```powershell
 Get-ScheduledTaskInfo -TaskName "VCApp Tunnel Watchdog"   # mira LastRunTime
