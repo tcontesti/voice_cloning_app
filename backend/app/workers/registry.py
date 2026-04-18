@@ -48,6 +48,25 @@ class ModelRegistry:
         with self._lock:
             self._last_used = time.time()
 
+    def evict_current(self) -> None:
+        """Force-unload the cached adapter.
+
+        Called by tasks.py on synthesis errors so a suspect adapter state
+        (e.g. qwen3 subprocess hung) doesn't carry over into the next job.
+        Best-effort unload — if unload itself raises, we still drop the ref
+        so the next get() loads cleanly.
+        """
+        with self._lock:
+            if self._adapter is None:
+                return
+            name = self._adapter.name
+            try:
+                self._adapter.unload()
+            except Exception:
+                log.warning("registry.evict.unload_failed", model=name, exc_info=True)
+            self._adapter = None
+            log.info("registry.evict.manual", model=name)
+
     def _ensure_reaper(self) -> None:
         if self._reaper_started:
             return

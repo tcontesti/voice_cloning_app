@@ -177,6 +177,18 @@ def synthesize(self, *, synthesis_id: str, model: str) -> dict:
 
     except Exception as e:
         log.exception("synthesis.failed", synthesis_id=synthesis_id)
+        # Drop the cached adapter — an exception mid-synthesize usually means
+        # the underlying state is suspect (e.g. qwen3's subprocess hung mid
+        # inference and celery SoftTimeLimit killed us; the subprocess is
+        # still "loaded" from the registry's view but structurally broken,
+        # and the next job inherits the bad state). Forcing a reload costs
+        # one cold model load but stops the cascade where every qwen3 job
+        # after the first failure times out too.
+        try:
+            from app.workers.registry import registry as _reg
+            _reg.evict_current()
+        except Exception:
+            log.warning("registry.evict_on_fail_failed", exc_info=True)
         try:
             syn = db.get(Synthesis, UUID(synthesis_id))
             if syn is not None:
