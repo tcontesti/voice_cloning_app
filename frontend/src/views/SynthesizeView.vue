@@ -212,11 +212,28 @@ const finished = computed(() => job.value?.status === 'succeeded' || stage.value
 const failed = computed(() => job.value?.status === 'failed' || stage.value === 'failed')
 const running = computed(() => !!job.value && !finished.value && !failed.value)
 
+// Benchmark snapshot 2026-04-14 (docs/benchmarks). RTF is real-time factor
+// (lower = faster), UTMOS = naturalness (higher better), Sim WavLM = speaker
+// similarity cosine (higher better). ElevenLabs wasn't in the on-prem bench
+// because it runs off-host; its numbers are "—".
+const BENCH_METRICS: Record<string, { rtf: string; utmos: string; sim: string }> = {
+  chatterbox: { rtf: '0.50', utmos: '3.11', sim: '0.71' },
+  omnivoice:  { rtf: '1.27', utmos: '2.67', sim: '0.79' },
+  qwen3tts:   { rtf: '1.07', utmos: '3.11', sim: '0.78' },
+  elevenlabs: { rtf: '—',    utmos: '—',    sim: '—'    },
+}
+
 function modelMetrics(m: ModelInfo) {
+  const b = BENCH_METRICS[m.name]
+  if (!b) return [
+    { label: 'RTF', value: '—' },
+    { label: 'UTMOS', value: '—' },
+    { label: 'SIM', value: '—' },
+  ]
   return [
-    { label: 'RTF', value: m.available ? '~0.4' : '—' },
-    { label: 'MOS', value: m.available ? '4.1' : '—' },
-    { label: 'SIM', value: m.available ? '0.86' : '—' },
+    { label: 'RTF', value: b.rtf },
+    { label: 'UTMOS', value: b.utmos },
+    { label: 'SIM', value: b.sim },
   ]
 }
 
