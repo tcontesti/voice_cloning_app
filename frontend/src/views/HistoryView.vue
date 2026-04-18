@@ -1,16 +1,24 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Play, Download, ShieldCheck, ShieldAlert } from 'lucide-vue-next'
 import { synthesisApi, type SynthesisRow } from '@/api/synthesis'
+import { useAuthStore } from '@/stores/auth'
 
 const { t } = useI18n()
+const auth = useAuthStore()
 
 const rows = ref<SynthesisRow[]>([])
 const loading = ref(false)
 const errorMsg = ref<string | null>(null)
 const modelFilter = ref<'all' | SynthesisRow['model']>('all')
 const playingId = ref<string | null>(null)
+
+// Audio endpoint is Bearer-protected, so <audio src> / <a href> don't work:
+// the browser issues those requests without the Authorization header. We
+// fetch the WAV ourselves and hand the element an object URL per row.
+const audioUrls = ref<Record<string, string>>({})
+const audioLoading = ref<Record<string, boolean>>({})
 
 onMounted(async () => {
   loading.value = true
@@ -22,6 +30,30 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+onBeforeUnmount(() => {
+  for (const url of Object.values(audioUrls.value)) URL.revokeObjectURL(url)
+})
+
+async function loadAudio(id: string): Promise<string | null> {
+  if (audioUrls.value[id]) return audioUrls.value[id]
+  audioLoading.value[id] = true
+  try {
+    const res = await fetch(synthesisApi.audioUrl(id), {
+      headers: auth.token ? { Authorization: `Bearer ${auth.token}` } : {},
+    })
+    if (!res.ok) throw new Error(`audio ${res.status}`)
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    audioUrls.value[id] = url
+    return url
+  } catch (e) {
+    errorMsg.value = `No se pudo cargar el audio: ${(e as Error).message}`
+    return null
+  } finally {
+    audioLoading.value[id] = false
+  }
+}
 
 const filtered = computed(() => {
   const base = modelFilter.value === 'all'
@@ -42,8 +74,20 @@ function fmtTimecode(iso: string): string {
 function statusClass(s: SynthesisRow['status']): string {
   return `hist__status hist__status--${s}`
 }
-function togglePlay(id: string) {
-  playingId.value = playingId.value === id ? null : id
+async function togglePlay(id: string) {
+  if (playingId.value === id) { playingId.value = null; return }
+  const url = await loadAudio(id)
+  if (url) playingId.value = id
+}
+async function downloadAudio(id: string) {
+  const url = await loadAudio(id)
+  if (!url) return
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `synthesis-${id.slice(0, 8)}.wav`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
 }
 </script>
 
@@ -110,17 +154,18 @@ function togglePlay(id: string) {
             >
               <Play class="w-4 h-4" />
             </button>
-            <a
+            <button
               v-if="r.status === 'succeeded'"
-              :href="synthesisApi.audioUrl(r.id)"
-              download
+              type="button"
               class="hist__icon-btn"
+              :disabled="audioLoading[r.id]"
               :aria-label="t('common.download') ?? 'Descargar'"
+              @click="downloadAudio(r.id)"
             >
               <Download class="w-4 h-4" />
-            </a>
+            </button>
           </span>
-          <audio v-if="playingId === r.id" :src="synthesisApi.audioUrl(r.id)"
+          <audio v-if="playingId === r.id && audioUrls[r.id]" :src="audioUrls[r.id]"
                  class="hist__audio" autoplay controls @ended="playingId = null" />
         </div>
       </template>
