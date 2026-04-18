@@ -28,6 +28,7 @@ dependencies = [
     "redis>=5.2",
     "websockets>=14.1",
     "hvac>=2.3",
+    "markdown>=3.7",
 ]
 
 [project.optional-dependencies]

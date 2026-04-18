@@ -3,14 +3,20 @@
 The consent text lives under app/consent_texts/ as versioned markdown so it
 is auditable in git. text_hash = sha256 of the raw bytes; the client must
 echo the same hash they saw to prevent legal-text/UI desync attacks.
+
+The HTML render is a view concern layered on top — it never participates
+in the hash or signature, so changing the renderer (or its options) has
+no legal-integrity impact.
 """
 
 from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
+import markdown as md
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.consent import Consent
@@ -24,14 +30,31 @@ _CONSENT_DIR = Path(__file__).resolve().parent.parent / "consent_texts"
 class ConsentText:
     version: str
     body_markdown: str
+    body_html: str
     text_hash: str
+
+
+@lru_cache(maxsize=16)
+def _render_html(text_hash: str, body: str) -> str:
+    # Keyed by text_hash so identical content renders once per process.
+    # `extra` covers tables / fenced code / attr lists — enough for the
+    # legal doc's structure without pulling a bigger dep like bleach.
+    # Content comes from a file versioned in git (not user input), so
+    # the v-html consumer on the frontend isn't an XSS surface.
+    del text_hash  # cache key only
+    return md.markdown(body, extensions=["extra", "sane_lists"], output_format="html5")
 
 
 def load_current() -> ConsentText:
     path = _CONSENT_DIR / f"{CURRENT_CONSENT_VERSION}.md"
     body = path.read_text(encoding="utf-8")
     h = hashlib.sha256(body.encode("utf-8")).hexdigest()
-    return ConsentText(version=CURRENT_CONSENT_VERSION, body_markdown=body, text_hash=h)
+    return ConsentText(
+        version=CURRENT_CONSENT_VERSION,
+        body_markdown=body,
+        body_html=_render_html(h, body),
+        text_hash=h,
+    )
 
 
 def compute_signature(*, user: User, text_hash: str, ip: str | None) -> str:

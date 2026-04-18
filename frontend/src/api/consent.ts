@@ -4,6 +4,7 @@ export interface ConsentText {
   version: string
   text_hash: string
   body_markdown: string
+  body_html: string
 }
 
 export interface Consent {

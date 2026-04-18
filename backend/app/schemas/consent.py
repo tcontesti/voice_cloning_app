@@ -8,6 +8,7 @@ class ConsentTextOut(BaseModel):
     version: str
     text_hash: str
     body_markdown: str
+    body_html: str
 
 
 class ConsentAcceptIn(BaseModel):

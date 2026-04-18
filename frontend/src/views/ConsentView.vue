@@ -111,9 +111,11 @@ onBeforeUnmount(() => {
     </header>
 
     <section class="consent__doc studio-card" aria-live="polite">
-      <div v-if="text" class="consent__scroll" @scroll="onScroll">
-        {{ text.body_markdown }}
-      </div>
+      <!-- body_html is rendered from markdown server-side; the source lives
+           in app/consent_texts/*.md in git, so v-html isn't a user-input
+           surface. text_hash is still computed over the raw markdown, so
+           legal integrity doesn't depend on the HTML render. -->
+      <div v-if="text" class="consent__scroll" v-html="text.body_html" @scroll="onScroll"></div>
       <p v-if="text && !reachedBottom" class="consent__scroll-hint studio-value">
         ↓ {{ t('consent.scrollNotice') }}
       </p>
@@ -203,9 +205,37 @@ onBeforeUnmount(() => {
   font-size: 16px;
   line-height: 1.75;
   color: var(--fg-0);
-  white-space: pre-wrap;
   padding-right: 12px;
 }
+/* Tight baseline for the markdown-rendered HTML so the legal doc reads as
+   a document instead of the stacked-paragraph default. Scoped under the
+   scroll container so it only touches body_html output. */
+.consent__scroll :deep(h1),
+.consent__scroll :deep(h2),
+.consent__scroll :deep(h3) {
+  margin: 1.2em 0 0.5em;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fg-0);
+}
+.consent__scroll :deep(h1) { font-size: 22px; }
+.consent__scroll :deep(h2) { font-size: 18px; }
+.consent__scroll :deep(h3) { font-size: 16px; color: var(--fg-1); }
+.consent__scroll :deep(p)  { margin: 0.8em 0; }
+.consent__scroll :deep(ul),
+.consent__scroll :deep(ol) { margin: 0.6em 0 0.8em; padding-left: 1.4em; }
+.consent__scroll :deep(li) { margin: 0.2em 0; }
+.consent__scroll :deep(strong) { color: var(--fg-0); }
+.consent__scroll :deep(em)     { color: var(--fg-1); }
+.consent__scroll :deep(code) {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 1px 4px;
+  background: var(--bg-2);
+  border-radius: 3px;
+}
+.consent__scroll :deep(a) { color: var(--accent-glow); }
 .consent__scroll::-webkit-scrollbar { width: 8px; }
 .consent__scroll::-webkit-scrollbar-thumb {
   background: var(--line-2);

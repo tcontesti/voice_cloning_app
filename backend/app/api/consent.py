@@ -12,7 +12,10 @@ router = APIRouter(prefix="/consent", tags=["consent"])
 async def get_current_text() -> ConsentTextOut:
     text = consent_svc.load_current()
     return ConsentTextOut(
-        version=text.version, text_hash=text.text_hash, body_markdown=text.body_markdown
+        version=text.version,
+        text_hash=text.text_hash,
+        body_markdown=text.body_markdown,
+        body_html=text.body_html,
     )
 
 
