@@ -54,9 +54,26 @@ class Settings(BaseSettings):
 
     # ElevenLabs cloud adapter. Disabled by default — when enabled the
     # /synthesis/models endpoint exposes it and the worker_elevenlabs
-    # queue is expected to be up.
+    # queue is expected to be up. The rest of these are adapter knobs
+    # consumed by app/workers/adapters/elevenlabs.py; missing them at
+    # attribute access raised AttributeError at synthesis time and the
+    # job crashed with "Settings' object has no attribute ..." in the
+    # error column, which is how we found the gap.
     elevenlabs_enabled: bool = False
     elevenlabs_api_key: str = ""
+    # Default tuned for the spoken clinical-text length (~500 chars);
+    # bumps to 90 give ElevenLabs room for the synthesis call itself
+    # on top of slow network.
+    elevenlabs_http_timeout_s: float = 90.0
+    elevenlabs_retry_max_attempts: int = 4
+    # IVC accepts up to 25 files — but 8 refs covers clinical needs and
+    # keeps the multipart body well under the 11 MB hard cap.
+    elevenlabs_max_refs: int = 8
+    # Re-cloning the same voice costs IVC quota; 24 h cache is what the
+    # adapter assumes and what ops scoped for.
+    elevenlabs_voice_cache_ttl_s: int = 24 * 60 * 60
+    # Default model ID — overridable per-job via options.model_id.
+    elevenlabs_model_id: str = "eleven_multilingual_v2"
 
     @property
     def cors_origins_list(self) -> list[str]:

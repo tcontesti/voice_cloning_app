@@ -90,6 +90,11 @@ def verify(scheme: str, samples: np.ndarray, sample_rate: int) -> WatermarkResul
         return verify_perth(samples, sample_rate)
     if scheme == "audioseal":
         return verify_audioseal(samples, sample_rate)
+    if scheme == "none":
+        # Non-watermarked models (e.g. cloud adapters like ElevenLabs). We
+        # report this transparently rather than pretend verification passed:
+        # detected=False + confidence=0 tells the UI "no watermark to check".
+        return WatermarkResult(scheme="none", detected=False, confidence=0.0)
     raise ValueError(f"unsupported watermark scheme: {scheme}")
 
 
@@ -124,4 +129,12 @@ def scheme_for_model(model: str) -> tuple[str, bool]:
         return "perth", False
     if model in ("omnivoice", "qwen3tts"):
         return "audioseal", True
+    if model == "elevenlabs":
+        # Cloud adapter — audio leaves the hospital and comes back already
+        # generated. We intentionally don't re-watermark it with AudioSeal
+        # because the adapter's whole contract is "non-clinical, data-left":
+        # quietly applying our WM would imply clinical-grade provenance we
+        # can't stand behind for this path. The UI already shows an amber
+        # "datos salen del hospital" strip when model==elevenlabs.
+        return "none", False
     raise ValueError(f"unknown model: {model}")
