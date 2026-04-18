@@ -14,7 +14,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Mic, Square, Plus, Upload, Trash2, Play, Check } from 'lucide-vue-next'
+import { Mic, Square, Plus, Upload, Trash2, Play, Pause, Check } from 'lucide-vue-next'
 
 const { t } = useI18n()
 
@@ -206,6 +206,10 @@ function onDrop(e: DragEvent) {
 // player emits an opaque NotSupportedError mid-playback when the blob URL
 // vanishes under it.
 const playing = new Map<string, HTMLAudioElement>()
+// Which take is currently playing (for Play→Pause toggle rendering) and
+// per-take progress in [0, 1] so TakeThumbnail can draw the red playhead.
+const currentPlayingId = ref<string | null>(null)
+const progressById = ref<Record<string, number>>({})
 
 function stopPlayback(id: string) {
   const a = playing.get(id)
@@ -216,12 +220,14 @@ function stopPlayback(id: string) {
     a.load()
   } catch { /* noop */ }
   playing.delete(id)
+  if (currentPlayingId.value === id) currentPlayingId.value = null
 }
 
 function deleteTake(id: string) {
   const idx = takes.value.findIndex((t) => t.id === id)
   if (idx < 0) return
   stopPlayback(id)
+  delete progressById.value[id]
   URL.revokeObjectURL(takes.value[idx].url)
   takes.value.splice(idx, 1)
 }
@@ -231,18 +237,72 @@ function toggleMark(id: string) {
   if (t) t.marked = !t.marked
 }
 
-function playTake(id: string) {
+function togglePlayTake(id: string) {
+  const existing = playing.get(id)
+  if (existing && !existing.paused) {
+    existing.pause()
+    currentPlayingId.value = null
+    return
+  }
+  // Stop any other take so only one plays at a time.
+  for (const otherId of playing.keys()) {
+    if (otherId !== id) stopPlayback(otherId)
+  }
+  if (existing && existing.paused) {
+    void existing.play().then(() => { currentPlayingId.value = id })
+    return
+  }
   const t = takes.value.find((x) => x.id === id)
   if (!t) return
-  // Replacing an existing playback element is fine — it pauses naturally
-  // when its src changes, but be explicit so the Map stays truthful.
-  stopPlayback(id)
   const audio = new Audio(t.url)
-  const release = () => playing.delete(id)
-  audio.addEventListener('ended', release, { once: true })
-  audio.addEventListener('error', release, { once: true })
+  const onTime = () => {
+    const d = audio.duration
+    progressById.value[id] = d > 0 && isFinite(d) ? audio.currentTime / d : 0
+  }
+  const onEnd = () => {
+    progressById.value[id] = 0
+    currentPlayingId.value = null
+  }
+  audio.addEventListener('timeupdate', onTime)
+  audio.addEventListener('ended', onEnd, { once: true })
+  audio.addEventListener('pause', () => {
+    if (currentPlayingId.value === id && audio.paused && !audio.ended) {
+      currentPlayingId.value = null
+    }
+  })
+  audio.addEventListener('error', () => {
+    playing.delete(id)
+    if (currentPlayingId.value === id) currentPlayingId.value = null
+  }, { once: true })
   playing.set(id, audio)
-  void audio.play().catch(release)
+  void audio.play()
+    .then(() => { currentPlayingId.value = id })
+    .catch(() => { playing.delete(id) })
+}
+
+function seekTake(id: string, ratio: number) {
+  const audio = playing.get(id)
+  const t = takes.value.find((x) => x.id === id)
+  // Click-to-seek works before first play too — duration comes from the
+  // decoded AudioBuffer in that case. Start playback from the click
+  // position if nothing's playing yet, otherwise just move currentTime.
+  if (!audio) {
+    togglePlayTake(id)
+    // Next tick: the newly created audio needs its metadata before seek.
+    // Simpler: wait for loadedmetadata. For WAV blobs it's usually instant.
+    const a = playing.get(id)
+    if (!a) return
+    const apply = () => {
+      const d = a.duration || t?.durationS || 0
+      if (d > 0) a.currentTime = Math.max(0, Math.min(d, ratio * d))
+    }
+    if (a.readyState >= 1) apply()
+    else a.addEventListener('loadedmetadata', apply, { once: true })
+    return
+  }
+  const d = audio.duration || t?.durationS || 0
+  if (d > 0) audio.currentTime = Math.max(0, Math.min(d, ratio * d))
+  progressById.value[id] = ratio
 }
 
 const markedCount = computed(() => takes.value.filter((t) => t.marked).length)
@@ -396,7 +456,14 @@ const statusText = computed(() => {
       <ol v-else class="rs__take-list">
         <li v-for="(t, i) in takes" :key="t.id" class="rs__take" :class="{ 'rs__take--marked': t.marked }">
           <div class="rs__take-index studio-value">{{ String(i + 1).padStart(2, '0') }}</div>
-          <TakeThumbnail :buffer="t.buffer" :width="320" :height="48" />
+          <TakeThumbnail
+            :buffer="t.buffer"
+            :width="320"
+            :height="48"
+            :progress="progressById[t.id] ?? 0"
+            interactive
+            @seek="(r: number) => seekTake(t.id, r)"
+          />
           <div class="rs__take-meta">
             <div class="studio-value">{{ t.durationS.toFixed(1) }}s</div>
             <div class="rs__take-snr">
@@ -410,8 +477,11 @@ const statusText = computed(() => {
             </div>
           </div>
           <div class="rs__take-actions">
-            <button type="button" class="rs__icon-btn" aria-label="Reproducir" @click="playTake(t.id)">
-              <Play class="w-4 h-4" />
+            <button type="button" class="rs__icon-btn"
+                    :class="{ 'rs__icon-btn--active': currentPlayingId === t.id }"
+                    :aria-label="currentPlayingId === t.id ? 'Pausar' : 'Reproducir'"
+                    @click="togglePlayTake(t.id)">
+              <component :is="currentPlayingId === t.id ? Pause : Play" class="w-4 h-4" />
             </button>
             <button type="button" class="rs__icon-btn"
                     :class="{ 'rs__icon-btn--active': t.marked }"
