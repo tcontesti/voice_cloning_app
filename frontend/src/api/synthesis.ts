@@ -52,7 +52,8 @@ export const profilesApi = {
     api.post<Profile>('/profiles', { name, reference_ids }),
   update: (id: string, patch: { name?: string; reference_ids?: string[] }) =>
     patchJson<Profile>(`/profiles/${id}`, patch),
-  remove: (id: string) => api.del<void>(`/profiles/${id}`),
+  remove: (id: string, opts?: { cascade?: boolean }) =>
+    api.del<void>(`/profiles/${id}${opts?.cascade ? '?cascade=true' : ''}`),
 }
 
 // Generic client only speaks GET/POST/PUT/DELETE/upload. PATCH is hand-rolled

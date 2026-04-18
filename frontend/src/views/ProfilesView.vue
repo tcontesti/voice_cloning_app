@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { Mic, Wand2, AudioWaveform, Pencil, Trash2, Plus, Check, X } from 'lucide-vue-next'
 import { profilesApi, type Profile } from '@/api/synthesis'
 import { recordingsApi, type Recording } from '@/api/recordings'
+import { ApiError } from '@/api/client'
 import LED from '@/ui/primitives/LED.vue'
 
 const { t } = useI18n()
@@ -25,6 +26,12 @@ const addingSelection = ref<Set<string>>(new Set())
 // than a modal, since the action is reversible via recreation.
 const pendingDeleteId = ref<string | null>(null)
 let pendingDeleteTimer: ReturnType<typeof setTimeout> | null = null
+
+// Cascade-delete modal: opens when a plain DELETE 409s because syntheses
+// reference the profile. Stores enough to show "N síntesis" in the prompt
+// and to retry with ?cascade=true.
+const cascade = ref<{ id: string; name: string; nSyntheses: number } | null>(null)
+const cascadeBusy = ref(false)
 
 onMounted(async () => {
   loading.value = true
@@ -106,9 +113,41 @@ async function confirmDelete(id: string) {
     await profilesApi.remove(id)
     profiles.value = profiles.value.filter((x) => x.id !== id)
   } catch (e) {
+    // Backend returns 409 with {message, reason:'in_use', n_syntheses}
+    // when the FK blocks the delete. Offer the cascade flow instead of
+    // surfacing a bare "409" to the user.
+    if (e instanceof ApiError && e.status === 409) {
+      const d = e.detail as { reason?: string; n_syntheses?: number } | string | null
+      if (d && typeof d === 'object' && d.reason === 'in_use') {
+        const p = profiles.value.find((x) => x.id === id)
+        cascade.value = {
+          id,
+          name: p?.name ?? '',
+          nSyntheses: typeof d.n_syntheses === 'number' ? d.n_syntheses : 0,
+        }
+        return
+      }
+    }
     errorMsg.value = (e as Error).message
   }
 }
+
+async function confirmCascade() {
+  const c = cascade.value
+  if (!c) return
+  cascadeBusy.value = true
+  try {
+    await profilesApi.remove(c.id, { cascade: true })
+    profiles.value = profiles.value.filter((x) => x.id !== c.id)
+    cascade.value = null
+  } catch (e) {
+    errorMsg.value = (e as Error).message
+  } finally {
+    cascadeBusy.value = false
+  }
+}
+
+function cancelCascade() { cascade.value = null }
 
 function openAddRefs(p: Profile) {
   addingId.value = p.id
@@ -228,6 +267,38 @@ function closeAddRefs() { addingId.value = null }
         </div>
       </li>
     </ul>
+
+    <div v-if="cascade" class="profiles__modal" role="dialog" aria-modal="true" @click.self="cancelCascade">
+      <div class="profiles__modal-card studio-card">
+        <header class="profiles__modal-head">
+          <div class="studio-label">BORRADO EN CASCADA</div>
+          <button type="button" class="profiles__icon-btn" aria-label="Cerrar" @click="cancelCascade">
+            <X class="w-4 h-4" />
+          </button>
+        </header>
+        <p class="profiles__cascade-body">
+          El perfil <strong>{{ cascade.name }}</strong> tiene
+          <strong>{{ cascade.nSyntheses }}</strong>
+          {{ cascade.nSyntheses === 1 ? 'síntesis asociada' : 'síntesis asociadas' }}.
+          Para borrarlo hay que borrar también esas síntesis. Esta acción
+          <strong>no se puede deshacer</strong>.
+        </p>
+        <footer class="profiles__modal-foot">
+          <button type="button" class="profiles__btn" :disabled="cascadeBusy" @click="cancelCascade">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="profiles__btn profiles__btn--danger profiles__btn--confirm"
+            :disabled="cascadeBusy"
+            @click="confirmCascade"
+          >
+            <Trash2 class="w-4 h-4" />
+            <span>{{ cascadeBusy ? 'BORRANDO…' : `BORRAR PERFIL + ${cascade.nSyntheses} SÍNTESIS` }}</span>
+          </button>
+        </footer>
+      </div>
+    </div>
 
     <div v-if="addingId" class="profiles__modal" role="dialog" aria-modal="true" @click.self="closeAddRefs">
       <div class="profiles__modal-card studio-card">
@@ -479,6 +550,13 @@ function closeAddRefs() { addingId.value = null }
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+}
+.profiles__cascade-body {
+  margin: 0;
+  color: var(--fg-0);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
 }
 .profiles__link { color: var(--accent-glow); }
 </style>

@@ -92,15 +92,49 @@ async def set_references(
     return profile
 
 
+async def count_syntheses(
+    session: AsyncSession, *, profile_id: UUID
+) -> int:
+    n = await session.scalar(
+        select(func.count()).select_from(Synthesis).where(Synthesis.profile_id == profile_id)
+    )
+    return int(n or 0)
+
+
 async def delete(
     session: AsyncSession, *, profile: VoiceProfile
 ) -> None:
     # Syntheses FK is RESTRICT, so we'd 500 on the underlying IntegrityError
     # without this pre-check. Give the caller a clean conflict instead.
-    in_use = await session.scalar(
-        select(func.count()).select_from(Synthesis).where(Synthesis.profile_id == profile.id)
-    )
-    if int(in_use or 0) > 0:
-        raise ProfileInUseError(f"profile in use by {in_use} synthesis row(s)")
+    n = await count_syntheses(session, profile_id=profile.id)
+    if n > 0:
+        raise ProfileInUseError(
+            f"profile in use by {n} synthesis row(s)",
+        )
     await session.delete(profile)
     await session.flush()
+
+
+async def cascade_delete(
+    session: AsyncSession, *, profile: VoiceProfile
+) -> int:
+    """Drop every synthesis tied to the profile, then the profile itself.
+
+    Returns the number of synthesis rows deleted so the caller can surface
+    it (and audit it) without an extra round-trip. Audio blobs in MinIO
+    are left behind — they're uniquely keyed per synthesis and a MinIO
+    lifecycle policy or manual sweep can reclaim them later. Blocking
+    the DB delete on a MinIO round-trip that might fail isn't worth the
+    cross-system coupling.
+    """
+    n = await count_syntheses(session, profile_id=profile.id)
+    if n > 0:
+        # Bulk delete syntheses first, then the profile. Single transaction
+        # — if anything raises, the caller hasn't committed yet.
+        from sqlalchemy import delete as sa_delete
+        await session.execute(
+            sa_delete(Synthesis).where(Synthesis.profile_id == profile.id)
+        )
+    await session.delete(profile)
+    await session.flush()
+    return n

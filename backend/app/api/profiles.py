@@ -117,6 +117,7 @@ async def delete_one(
     request: Request,
     user: CurrentUserDep,
     session: SessionDep,
+    cascade: bool = False,
 ) -> None:
     profile = await profiles_svc.get_owned(
         session, user_id=user.id, profile_id=profile_id
@@ -124,13 +125,45 @@ async def delete_one(
     if profile is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="not found")
 
+    snapshot = {
+        "name": profile.name,
+        "n_references": len(profile.reference_ids),
+        "ip": request.client.host if request.client else None,
+    }
+
+    if cascade:
+        # Caller asked to drop tied syntheses too. n == 0 is fine — the
+        # operation is still idempotent and audit-worthy so the log shows
+        # intent even when there was nothing to cascade.
+        n_syn = await profiles_svc.cascade_delete(session, profile=profile)
+        await audit_svc.append(
+            session,
+            actor_id=user.id,
+            action="profile.cascade_deleted",
+            resource_type="voice_profile",
+            resource_id=str(profile_id),
+            payload={**snapshot, "n_syntheses": n_syn},
+        )
+        await session.commit()
+        return
+
     try:
         await profiles_svc.delete(session, profile=profile)
     except profiles_svc.ProfileInUseError as e:
         # 409 Conflict is the right code when the resource exists but the
         # requested operation is blocked by referential state the caller
-        # could in principle resolve (delete the related syntheses first).
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e)) from e
+        # could in principle resolve. Frontend parses this detail to offer
+        # the cascade flow; the "in use by N synthesis row(s)" shape is
+        # load-bearing for that parser — update both sides together.
+        n_in_use = await profiles_svc.count_syntheses(session, profile_id=profile_id)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "message": str(e),
+                "reason": "in_use",
+                "n_syntheses": n_in_use,
+            },
+        ) from e
 
     await audit_svc.append(
         session,
@@ -138,10 +171,6 @@ async def delete_one(
         action="profile.deleted",
         resource_type="voice_profile",
         resource_id=str(profile_id),
-        payload={
-            "name": profile.name,
-            "n_references": len(profile.reference_ids),
-            "ip": request.client.host if request.client else None,
-        },
+        payload=snapshot,
     )
     await session.commit()
