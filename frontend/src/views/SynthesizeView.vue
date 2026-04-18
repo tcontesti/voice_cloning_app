@@ -112,6 +112,12 @@ async function ensureProfile(): Promise<string> {
 async function submit() {
   errorMsg.value = null
   submitting.value = true
+  // Drop the previous job's audio before we even hit the network. Without
+  // this, the watcher below races against stale `last.stage='done'` from
+  // the prior WS session and would try to GET the fresh job's audio while
+  // the worker hasn't written it yet — the user sees "audio 404".
+  if (audioUrl.value) { URL.revokeObjectURL(audioUrl.value); audioUrl.value = null }
+  audioJobId.value = null
   job.value = null
   try {
     const profile_id = await ensureProfile()
@@ -136,23 +142,47 @@ async function submit() {
 // WaveSurfer's loader use plain GET without our auth header. We fetch the
 // blob ourselves and hand the player an object URL.
 const audioUrl = ref<string | null>(null)
+// Track which job the cached blob belongs to, so a fetch for job A that
+// resolves AFTER the user has already moved on to job B doesn't overwrite
+// the current URL.
+const audioJobId = ref<string | null>(null)
+
+async function fetchAudioWithRetry(id: string): Promise<Blob> {
+  // The worker flips status→succeeded then writes to MinIO; there's a brief
+  // window where the row says ready but the object isn't listable yet.
+  // Short retry (3 × 1s) is enough to cover it without making a real
+  // "audio missing" look like a hang.
+  let lastStatus = 0
+  for (let i = 0; i < 3; i++) {
+    const res = await fetch(synthesisApi.audioUrl(id), {
+      headers: auth.token ? { Authorization: `Bearer ${auth.token}` } : {},
+    })
+    if (res.ok) return await res.blob()
+    lastStatus = res.status
+    if (res.status !== 404) break
+    await new Promise((r) => setTimeout(r, 1000))
+  }
+  throw new Error(`audio ${lastStatus}`)
+}
 
 watch(
   () => [job.value?.id, last.value?.stage, job.value?.status] as const,
   async ([id, stage, status]) => {
-    const ready = !!id && (stage === 'done' || status === 'succeeded')
-    if (!ready || !id) {
-      if (audioUrl.value) { URL.revokeObjectURL(audioUrl.value); audioUrl.value = null }
-      return
-    }
-    if (audioUrl.value) return  // already loaded for this job
+    // Only load once the backend row actually says succeeded. `stage==='done'`
+    // alone isn't enough — stale WS state from a previous job used to trip
+    // us into fetching a brand-new (queued) job's audio and 404'ing.
+    const ready = !!id && status === 'succeeded' && stage === 'done'
+    if (!ready || !id) return
+    if (audioJobId.value === id && audioUrl.value) return  // already loaded
     try {
-      const res = await fetch(synthesisApi.audioUrl(id), {
-        headers: auth.token ? { Authorization: `Bearer ${auth.token}` } : {},
-      })
-      if (!res.ok) throw new Error(`audio ${res.status}`)
-      const blob = await res.blob()
+      const expected = id
+      const blob = await fetchAudioWithRetry(id)
+      // While we were fetching, the user may have launched another job.
+      // If the current job isn't the one we fetched, drop the result.
+      if (job.value?.id !== expected) return
+      if (audioUrl.value) URL.revokeObjectURL(audioUrl.value)
       audioUrl.value = URL.createObjectURL(blob)
+      audioJobId.value = expected
     } catch (e) {
       errorMsg.value = `No se pudo cargar el audio: ${(e as Error).message}`
     }

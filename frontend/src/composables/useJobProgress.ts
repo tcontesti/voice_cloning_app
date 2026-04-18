@@ -36,6 +36,11 @@ export function useJobProgress(jobId: () => string | null) {
   function open(id: string) {
     close()
     error.value = null
+    // Reset per-job state so the next consumer doesn't see stale stage/events
+    // from a prior job (that's how SynthesizeView kept loading the previous
+    // audio and 404'ing on model switches).
+    events.value = []
+    last.value = null
     if (!auth.token) { error.value = 'no token'; return }
 
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
