@@ -56,7 +56,11 @@ const supportsOptions = computed(() =>
   String(selectedModel.value).toLowerCase().includes('eleven'),
 )
 
-const player = ref<HTMLAudioElement | null>(null)
+// Single source of truth for playback is the WaveformTimeline. A previous
+// revision kept a hidden <audio> in parallel; the Play button hit that
+// element while click-to-seek moved the waveform's internal cursor, so the
+// two would desync — this was B3 ("la línea roja no funciona").
+const waveform = ref<InstanceType<typeof WaveformTimeline> | null>(null)
 const playing = ref(false)
 const playerDuration = ref(0)
 const playerTime = ref(0)
@@ -217,9 +221,7 @@ function modelMetrics(m: ModelInfo) {
 }
 
 function togglePlay() {
-  if (!player.value) return
-  if (player.value.paused) void player.value.play()
-  else player.value.pause()
+  waveform.value?.playPause()
 }
 
 watch(audioUrl, () => {
@@ -354,13 +356,25 @@ watch(audioUrl, () => {
             </div>
           </div>
 
-          <WaveformTimeline :src="audioUrl" :height="120" />
+          <WaveformTimeline
+            ref="waveform"
+            :src="audioUrl"
+            :height="120"
+            @ready="(d) => (playerDuration = d)"
+            @timeupdate="(t) => (playerTime = t)"
+            @play="playing = true"
+            @pause="playing = false"
+            @finish="playing = false"
+          />
 
           <div class="synth__player-controls">
             <button type="button" class="synth__pbtn" @click="togglePlay">
               <component :is="playing ? Pause : Play" class="w-4 h-4" />
               <span>{{ playing ? 'PAUSE' : 'PLAY' }}</span>
             </button>
+            <span class="studio-value synth__time">
+              {{ playerTime.toFixed(1) }} / {{ playerDuration.toFixed(1) }}s
+            </span>
             <a :href="audioUrl" :download="`synthesis-${job?.id.slice(0, 8) ?? 'out'}.wav`"
                class="synth__pbtn">
               <Download class="w-4 h-4" /><span>DOWNLOAD</span>
@@ -369,17 +383,6 @@ watch(audioUrl, () => {
               WS · {{ connected ? 'connected' : 'idle' }}
             </span>
           </div>
-
-          <audio
-            ref="player"
-            :src="audioUrl"
-            class="synth__audio-hidden"
-            @play="playing = true"
-            @pause="playing = false"
-            @ended="playing = false"
-            @loadedmetadata="(e) => (playerDuration = (e.target as HTMLAudioElement).duration)"
-            @timeupdate="(e) => (playerTime = (e.target as HTMLAudioElement).currentTime)"
-          />
         </div>
       </section>
     </div>
@@ -534,7 +537,13 @@ watch(audioUrl, () => {
 }
 .synth__pbtn:hover { border-color: var(--line-2); transform: translateY(-1px); }
 .synth__conn { margin-left: auto; color: var(--fg-2); }
-.synth__audio-hidden { display: none; }
+.synth__time {
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-1);
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
 
 .opts-enter-from, .opts-leave-to { opacity: 0; transform: translateX(8px); }
 .opts-enter-active, .opts-leave-active {
