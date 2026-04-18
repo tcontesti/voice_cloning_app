@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { LogIn } from 'lucide-vue-next'
+import { LogIn, Eye, EyeOff } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { ApiError } from '@/api/client'
 import LED from '@/ui/primitives/LED.vue'
@@ -14,6 +14,7 @@ const route = useRoute()
 
 const email = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const error = ref<string | null>(null)
 
 async function submit() {
@@ -48,10 +49,17 @@ async function submit() {
       <label for="email" class="login__label">{{ t('auth.email') }}</label>
     </div>
 
-    <div class="login__field" :class="{ 'login__field--filled': password }">
-      <input id="password" v-model="password" type="password"
+    <div class="login__field login__field--password" :class="{ 'login__field--filled': password }">
+      <input id="password" v-model="password"
+             :type="showPassword ? 'text' : 'password'"
              autocomplete="current-password" required class="login__input" placeholder=" " />
       <label for="password" class="login__label">{{ t('auth.password') }}</label>
+      <button type="button" class="login__eye"
+              :aria-label="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              :aria-pressed="showPassword"
+              @click="showPassword = !showPassword">
+        <component :is="showPassword ? EyeOff : Eye" class="w-4 h-4" />
+      </button>
     </div>
 
     <p v-if="error" class="login__error" role="alert">{{ error }}</p>
@@ -82,6 +90,32 @@ async function submit() {
 .login__hint { margin: 0; color: var(--fg-2); font-size: 13px; }
 
 .login__field { position: relative; }
+.login__field--password .login__input { padding-right: 42px; }
+.login__eye {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  color: var(--fg-2);
+  opacity: 0.5;
+  cursor: pointer;
+  border-radius: var(--radius-2);
+  transition: opacity var(--dur-base) var(--ease-studio),
+              color var(--dur-base) var(--ease-studio);
+}
+.login__eye:hover,
+.login__eye:focus-visible {
+  opacity: 1;
+  color: var(--fg-0);
+  outline: none;
+}
 .login__input {
   width: 100%;
   padding: 22px 14px 10px;
