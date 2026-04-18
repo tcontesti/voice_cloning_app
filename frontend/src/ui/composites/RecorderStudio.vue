@@ -26,7 +26,7 @@ import SegmentedDisplay from '@/ui/primitives/SegmentedDisplay.vue'
 import TakeThumbnail from '@/ui/composites/TakeThumbnail.vue'
 import DeviceSelector from '@/ui/composites/DeviceSelector.vue'
 
-import { useRecorder, type RecorderResult } from '@/composables/useRecorder'
+import { useRecorder, encodeWav, type RecorderResult } from '@/composables/useRecorder'
 import { useMeter } from '@/composables/useMeter'
 import { recordingsApi, type Recording } from '@/api/recordings'
 import { profilesApi, type Profile } from '@/api/synthesis'
@@ -119,7 +119,6 @@ async function addTakeFromResult(r: RecorderResult) {
 }
 
 async function buildTakeFromBlob(blob: Blob, knownDuration?: number): Promise<LocalTake> {
-  const url = URL.createObjectURL(blob)
   let buffer: AudioBuffer | null = null
   try {
     const arr = await blob.arrayBuffer()
@@ -129,11 +128,18 @@ async function buildTakeFromBlob(blob: Blob, knownDuration?: number): Promise<Lo
     // we still keep the blob so the user can upload it.
     buffer = null
   }
+  // Backend only accepts audio/wav (PCM). If the user dropped MP3/FLAC/OGG
+  // and it decoded, re-encode the first channel as WAV so upload succeeds.
+  let uploadBlob = blob
+  if (buffer && blob.type !== 'audio/wav') {
+    uploadBlob = encodeWav(buffer.getChannelData(0), buffer.sampleRate)
+  }
+  const url = URL.createObjectURL(uploadBlob)
   const snr = buffer ? estimateSnrDb(buffer) : null
   takeCounter.value += 1
   return {
     id: `local-${takeCounter.value}-${Date.now().toString(36)}`,
-    blob,
+    blob: uploadBlob,
     url,
     buffer,
     durationS: knownDuration ?? (buffer ? buffer.duration : 0),

@@ -20,7 +20,7 @@ export interface RecorderResult {
 
 const TARGET_SR = 16000
 
-function encodeWav(samples: Float32Array, sampleRate: number): Blob {
+export function encodeWav(samples: Float32Array, sampleRate: number): Blob {
   const bytesPerSample = 2
   const blockAlign = bytesPerSample
   const byteRate = sampleRate * blockAlign
