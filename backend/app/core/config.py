@@ -52,6 +52,12 @@ class Settings(BaseSettings):
 
     cors_allowed_origins: str = ""
 
+    # ElevenLabs cloud adapter. Disabled by default — when enabled the
+    # /synthesis/models endpoint exposes it and the worker_elevenlabs
+    # queue is expected to be up.
+    elevenlabs_enabled: bool = False
+    elevenlabs_api_key: str = ""
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_allowed_origins.split(",") if o.strip()]

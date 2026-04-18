@@ -1,7 +1,7 @@
 import { api } from './client'
 
 export type SynthesisStatus = 'queued' | 'running' | 'succeeded' | 'failed'
-export type SynthesisModel = 'chatterbox' | 'omnivoice' | 'qwen3tts'
+export type SynthesisModel = 'chatterbox' | 'omnivoice' | 'qwen3tts' | 'elevenlabs'
 
 export interface SynthesisRow {
   id: string

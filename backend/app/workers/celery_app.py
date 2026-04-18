@@ -51,6 +51,7 @@ celery_app.conf.update(
         Queue("synth.chatterbox", Exchange("synth", type="direct"), routing_key="synth.chatterbox"),
         Queue("synth.omnivoice",  Exchange("synth", type="direct"), routing_key="synth.omnivoice"),
         Queue("synth.qwen3tts",   Exchange("synth", type="direct"), routing_key="synth.qwen3tts"),
+        Queue("synth.elevenlabs", Exchange("synth", type="direct"), routing_key="synth.elevenlabs"),
     ),
     # Callers always pass queue=synth.<model> explicitly in send_task(...),
     # so no task_routes map is needed. Celery 5.6 rejects lambda-valued

@@ -22,7 +22,8 @@ router = APIRouter(prefix="/synthesis", tags=["synthesis"])
 
 @router.get("/models", response_model=list[ModelInfo])
 async def models() -> list[ModelInfo]:
-    return [
+    s = get_settings()
+    out = [
         ModelInfo(name="chatterbox", license="MIT", available=True,
                   notes="default · PerTh nativo"),
         ModelInfo(name="omnivoice", license="Apache-2.0", available=True,
@@ -30,6 +31,16 @@ async def models() -> list[ModelInfo]:
         ModelInfo(name="qwen3tts", license="Apache-2.0", available=True,
                   notes="venv aislado · subprocess · AudioSeal post-hoc"),
     ]
+    if s.elevenlabs_enabled:
+        out.append(
+            ModelInfo(
+                name="elevenlabs",
+                license="Proprietary · cloud",
+                available=bool(s.elevenlabs_api_key),
+                notes="cloud · multi-idioma · datos salen del hospital",
+            )
+        )
+    return out
 
 
 @router.post("", response_model=SynthesisOut, status_code=status.HTTP_201_CREATED)

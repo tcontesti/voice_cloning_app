@@ -105,6 +105,7 @@ async function downloadAudio(id: string) {
           <option value="chatterbox">chatterbox</option>
           <option value="omnivoice">omnivoice</option>
           <option value="qwen3tts">qwen3tts</option>
+          <option value="elevenlabs">elevenlabs</option>
         </select>
       </div>
     </header>

@@ -21,6 +21,7 @@ class SynthesisModel(str, enum.Enum):
     chatterbox = "chatterbox"
     omnivoice = "omnivoice"   # M6
     qwen3tts = "qwen3tts"     # M7
+    elevenlabs = "elevenlabs" # M8 — cloud, gated by settings.elevenlabs_enabled
 
 
 class Synthesis(Base, TimestampedUUIDMixin):
