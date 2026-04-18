@@ -400,6 +400,44 @@ watch(audioUrl, () => {
               WS · {{ connected ? 'connected' : 'idle' }}
             </span>
           </div>
+
+          <dl class="synth__detail" aria-label="Detalles de generación">
+            <div class="synth__detail-cell">
+              <dt class="studio-label">MODELO</dt>
+              <dd class="synth__detail-val">{{ job?.model ?? '—' }}</dd>
+            </div>
+            <div class="synth__detail-cell">
+              <dt class="studio-label">RTF</dt>
+              <dd class="synth__detail-val">
+                {{ job?.rtf != null ? job.rtf.toFixed(2) : '—' }}
+              </dd>
+            </div>
+            <div class="synth__detail-cell">
+              <dt class="studio-label">DURACIÓN</dt>
+              <dd class="synth__detail-val">
+                {{ job?.duration_s != null ? job.duration_s.toFixed(1) + 's' : '—' }}
+              </dd>
+            </div>
+            <div class="synth__detail-cell">
+              <dt class="studio-label">AASIST</dt>
+              <dd class="synth__detail-val">
+                {{ job?.aasist_score != null ? job.aasist_score.toFixed(2) : '—' }}
+              </dd>
+            </div>
+            <div class="synth__detail-cell">
+              <dt class="studio-label">WATERMARK</dt>
+              <dd class="synth__detail-val"
+                  :class="{
+                    'synth__detail-val--ok': wmStatus === 'ok',
+                    'synth__detail-val--err': wmStatus === 'missing',
+                  }">
+                {{ job?.watermark_scheme ?? '—' }}{{ wmStatus === 'ok' ? ' ✓' : wmStatus === 'missing' ? ' ✗' : '' }}
+              </dd>
+            </div>
+            <div v-if="job?.model === 'elevenlabs'" class="synth__detail-cloud">
+              Procesado por ElevenLabs (cloud · datos salen del hospital)
+            </div>
+          </dl>
         </div>
       </section>
     </div>
@@ -560,6 +598,39 @@ watch(audioUrl, () => {
   padding: 4px 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
+}
+
+.synth__detail {
+  margin: 4px 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-3);
+}
+.synth__detail-cell { display: flex; flex-direction: column; gap: 4px; }
+.synth__detail-val {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--fg-0);
+  font-variant-numeric: tabular-nums;
+}
+.synth__detail-val--ok  { color: var(--signal-green); }
+.synth__detail-val--err { color: var(--signal-red); }
+.synth__detail-cloud {
+  grid-column: 1 / -1;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--signal-amber) 10%, var(--bg-1));
+  border: 1px solid color-mix(in srgb, var(--signal-amber) 40%, transparent);
+  border-radius: var(--radius-2);
+  color: var(--fg-1);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
 }
 
 .opts-enter-from, .opts-leave-to { opacity: 0; transform: translateX(8px); }
