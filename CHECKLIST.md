@@ -4,6 +4,9 @@ Branch: `main`. Alcance: frontend Vue 3 + backend FastAPI (sin tocar workers
 Spark ni Docker). Baseline al arrancar: `vue-tsc`, `vitest` (10/10) y `vite
 build` en verde. Todo lo fijado abajo mantiene los tres en verde.
 
+> Pasada 2 (mismo día, tarde) — fixes reportados por usuario tras prueba
+> E2E: B1–B6 y U1–U3. Ver sección al final.
+
 ## Resumen por flujo
 
 | # | Flujo | Estado | Nota |
@@ -116,3 +119,60 @@ extensiones que requieren trabajo de backend.
 - `npx vue-tsc --noEmit` → exit 0
 - `npx vitest run` → 10/10
 - `npx vite build` → exit 0, built in ~2.4s
+
+---
+
+## Pasada 2 — Fixes reportados por usuario (E2E)
+
+Arreglos tras prueba end-to-end. Los items tachados en "Gaps" arriba que
+ya quedan cubiertos se marcan aquí.
+
+| # | Item | Estado | Commit |
+|---|---|---|---|
+| B1 | Login: eye/eyeoff password toggle | ✅ | `feat(ux): password show/hide toggle on login` |
+| B2 | Record: play/pause por take + waveform con playhead + click seek | ✅ | `feat(record): play/pause + seekable waveform playhead on each take` |
+| B3 | Synthesize: click-seek en waveform no funcionaba (audio doble) | ✅ | `fix(synthesis): unify playback on WaveformTimeline so seek actually works` |
+| B4 | Synthesize: "audio 404" al cambiar de modelo y regenerar | ✅ | `fix(synthesis): clear audio + guard status on model-switch resubmits` |
+| B5 | Synthesize: ElevenLabs no aparecía en /synthesis/models | ✅ | `fix(synthesis): sync elevenlabs enum + expose model` (combinado con B6) |
+| B6 | **HIGH**: GET /synthesis → 500 (enum DB vs Python desalineado) | ✅ | ver B5 |
+| U1 | ModelCards con métricas reales del benchmark 2026-04-14 | ✅ | `feat(ux): real benchmark metrics on ModelCards` |
+| U2 | Profiles CRUD — renombrar, borrar, editar referencias | ✅ | `feat(ux): profiles CRUD` |
+| U3 | Tarjeta "Detalles de generación" bajo el reproductor | ✅ | `feat(ux): generation metadata card under the synthesis player` |
+
+### Cambios backend de esta pasada
+
+- `SynthesisModel` enum Python extendida con `elevenlabs`.
+- Migración Alembic **0004** — `ADD VALUE IF NOT EXISTS 'elevenlabs'`
+  (idempotente; no-op en el DB multihost, necesaria para fresh installs).
+- `celery_app.task_queues` declara `synth.elevenlabs`.
+- Settings: `elevenlabs_enabled` + `elevenlabs_api_key` (ambos wired en
+  `docker-compose.multihost.yml`).
+- `/synthesis/models` expone el 4º modelo gated por
+  `settings.elevenlabs_enabled`.
+- Profiles API nuevos endpoints:
+  - `PATCH /profiles/{id}` (nombre y/o refs, parciales)
+  - `DELETE /profiles/{id}` → 204 OK, 409 si hay syntheses FK-restrict.
+- Auditoría: acciones `profile.updated` y `profile.deleted`.
+
+### Gaps actualizados
+
+- ~~F5 Modal cloud~~ — ✅ cubierto por U3 (aviso amarillo "datos salen del
+  hospital" cuando `model === 'elevenlabs'`). Modal bloqueante queda
+  pendiente si se decide que el consentimiento por generación sea
+  obligatorio.
+- ~~F5 Badge watermark scheme~~ — ✅ ahora se muestra el scheme name
+  (PerTh / AudioSeal) + ✓/✗ en el card de detalles.
+- ~~F11 ElevenLabs no expuesto~~ — ✅ backend expone el modelo cuando el
+  setting está activo; OptionsPanel se activa ahora automáticamente.
+- F2 Consent-me endpoint — sigue pendiente.
+- F10 Nav mobile hamburger — sigue pendiente.
+- F8 timezone del filtro — sigue pendiente.
+
+### Baselines pasada 2
+
+- `npx vue-tsc --noEmit` → exit 0
+- `npx vitest run` → 10/10
+- `npx vite build` → exit 0
+- Backend verificado en vivo: `GET /synthesis/models` devuelve 4 modelos,
+  `GET /synthesis` devuelve 200 (antes 500), login + profiles endpoints
+  OK.
