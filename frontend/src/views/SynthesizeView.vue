@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Send, ShieldCheck, ShieldAlert, Download, Sliders, Play, Pause } from 'lucide-vue-next'
 import {
@@ -23,6 +24,7 @@ import { useAuthStore } from '@/stores/auth'
 
 const { data: health, degraded, workerAvailable } = useSystemHealth()
 const auth = useAuthStore()
+const route = useRoute()
 
 const { t } = useI18n()
 
@@ -65,7 +67,12 @@ onMounted(async () => {
     profilesApi.list().then((r) => r.items),
     recordingsApi.list().then((r) => r.items),
   ])
-  if (profiles.value.length) selectedProfileId.value = profiles.value[0].id
+  // ProfilesView USE button links to /synthesize?profile=<id>. Honour it when
+  // the profile is still in the list; otherwise fall back to first-available.
+  const requested = typeof route.query.profile === 'string' ? route.query.profile : null
+  const preselect = requested && profiles.value.find((p) => p.id === requested)
+  if (preselect) selectedProfileId.value = preselect.id
+  else if (profiles.value.length) selectedProfileId.value = profiles.value[0].id
   const firstAvailable = models.value.find((m) => m.available)
   if (firstAvailable) selectedModel.value = firstAvailable.name as SynthesisModel
 })
@@ -324,7 +331,8 @@ watch(audioUrl, () => {
               <component :is="playing ? Pause : Play" class="w-4 h-4" />
               <span>{{ playing ? 'PAUSE' : 'PLAY' }}</span>
             </button>
-            <a :href="audioUrl" download class="synth__pbtn">
+            <a :href="audioUrl" :download="`synthesis-${job?.id.slice(0, 8) ?? 'out'}.wav`"
+               class="synth__pbtn">
               <Download class="w-4 h-4" /><span>DOWNLOAD</span>
             </a>
             <span class="studio-value synth__conn">
