@@ -50,4 +50,28 @@ export const profilesApi = {
   list: () => api.get<{ items: Profile[]; total: number }>('/profiles'),
   create: (name: string, reference_ids: string[]) =>
     api.post<Profile>('/profiles', { name, reference_ids }),
+  update: (id: string, patch: { name?: string; reference_ids?: string[] }) =>
+    patchJson<Profile>(`/profiles/${id}`, patch),
+  remove: (id: string) => api.del<void>(`/profiles/${id}`),
+}
+
+// Generic client only speaks GET/POST/PUT/DELETE/upload. PATCH is hand-rolled
+// here — mirrors the same bearer-auth + JSON error-shape the rest uses.
+async function patchJson<T>(path: string, body: unknown): Promise<T> {
+  const prefix = import.meta.env.VITE_API_PREFIX ?? '/api'
+  const { useAuthStore } = await import('@/stores/auth')
+  const auth = useAuthStore()
+  const res = await fetch(`${prefix}${path}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(auth.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const detail = await res.json().catch(() => ({ detail: `PATCH ${res.status}` }))
+    throw new Error(typeof detail.detail === 'string' ? detail.detail : `PATCH ${res.status}`)
+  }
+  return (await res.json()) as T
 }
