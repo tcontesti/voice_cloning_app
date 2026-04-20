@@ -8,7 +8,7 @@
 import { computed, onBeforeUnmount, ref, shallowRef } from 'vue'
 import { systemApi, type SystemHealth, type WorkerName } from '@/api/system'
 
-export type DegradedLevel = 'ok' | 'spark-down' | 'backend-down'
+export type DegradedLevel = 'ok' | 'spark-down' | 'backend-down' | 'loading'
 
 export interface UseSystemHealthOptions {
   intervalMs?: number
@@ -63,9 +63,10 @@ export function useSystemHealth(opts: UseSystemHealthOptions = {}) {
   start()
   onBeforeUnmount(stop)
 
-  /** Backend down ⇒ no health response; spark down ⇒ rabbit/minio unreachable. */
+  /** Backend down ⇒ current fetch failed; spark down ⇒ rabbit/minio unreachable. */
   const degraded = computed<DegradedLevel>(() => {
-    if (error.value && !data.value) return 'backend-down'
+    if (!data.value && !error.value) return 'loading'
+    if (error.value) return 'backend-down'
     if (data.value && !data.value.spark_reachable) return 'spark-down'
     return 'ok'
   })

@@ -104,6 +104,30 @@ services:
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     restart: unless-stopped
 
+  worker_elevenlabs:
+    build: {context: ../../backend, dockerfile: Dockerfile}
+    env_file: .env.multihost
+    environment:
+      RABBITMQ_HOST: host.docker.internal
+      RABBITMQ_PORT: 5682
+      MINIO_HOST: host.docker.internal
+      MINIO_PORT: 9010
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      ELEVENLABS_ENABLED: ${ELEVENLABS_ENABLED:-false}
+      ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../../backend/app:/app/app
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=info", "--concurrency=2", "--queues=synth.elevenlabs", "--hostname=worker-elevenlabs@%h"]
+    restart: unless-stopped
+
   nginx:
     image: nginx:1.27-alpine
     volumes:

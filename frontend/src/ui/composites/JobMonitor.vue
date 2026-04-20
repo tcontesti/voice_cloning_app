@@ -31,7 +31,7 @@ const lastProgressAt = ref<number | null>(null)
 const sinceProgressS = ref(0)
 let tick = 0
 
-const STALL_THRESHOLD_S = 30
+const STALL_THRESHOLD_S = 90
 
 function start() {
   // Idempotent: both onMounted and the immediate watch can call start(); a

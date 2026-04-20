@@ -16,12 +16,14 @@ const { data, degraded } = useSystemHealth()
 const tint = computed<'green' | 'amber' | 'red'>(() => {
   if (degraded.value === 'backend-down') return 'red'
   if (degraded.value === 'spark-down') return 'amber'
+  if (degraded.value === 'loading') return 'amber'
   return 'green'
 })
 
 const label = computed(() => {
   if (degraded.value === 'backend-down') return t('system.status.noService')
   if (degraded.value === 'spark-down') return t('system.status.sparkOffline')
+  if (degraded.value === 'loading') return '…'
   return t('system.status.ok')
 })
 

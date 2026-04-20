@@ -172,10 +172,10 @@ async function fetchAudioWithRetry(id: string): Promise<Blob> {
 watch(
   () => [job.value?.id, last.value?.stage, job.value?.status] as const,
   async ([id, stage, status]) => {
-    // Only load once the backend row actually says succeeded. `stage==='done'`
-    // alone isn't enough — stale WS state from a previous job used to trip
-    // us into fetching a brand-new (queued) job's audio and 404'ing.
-    const ready = !!id && status === 'succeeded' && stage === 'done'
+    // Load when WS reports done OR backend row says succeeded. job.value.status
+    // stays 'pending' from the initial POST (never polled), so we can't require both.
+    // audioJobId guard prevents stale fetches from a previous job.
+    const ready = !!id && (stage === 'done' || status === 'succeeded')
     if (!ready || !id) return
     if (audioJobId.value === id && audioUrl.value) return  // already loaded
     try {
