@@ -1,4 +1,5 @@
 {
+  "_comment": "DEV/STAGING SEED REALM. All credentials below are placeholders. Replace 'CHANGE_ME_DEV_ONLY_*' with real values before importing into any environment, and never use this file in production. Production uses ExternalSecrets / SealedSecrets / Vault.",
   "realm": "vcapp",
   "enabled": true,
   "accessTokenLifespan": 28800,
@@ -26,27 +27,27 @@
   ],
   "users": [
     {
-      "username": "paciente@hsll.es", "email": "paciente@hsll.es",
+      "username": "paciente@example.local", "email": "paciente@example.local",
       "enabled": true, "emailVerified": true,
-      "credentials": [{"type": "password", "value": "paciente", "temporary": false}],
+      "credentials": [{"type": "password", "value": "CHANGE_ME_DEV_ONLY_PACIENTE", "temporary": false}],
       "realmRoles": ["paciente"]
     },
     {
-      "username": "clinico@hsll.es", "email": "clinico@hsll.es",
+      "username": "clinico@example.local", "email": "clinico@example.local",
       "enabled": true, "emailVerified": true,
-      "credentials": [{"type": "password", "value": "clinico", "temporary": false}],
+      "credentials": [{"type": "password", "value": "CHANGE_ME_DEV_ONLY_CLINICO", "temporary": false}],
       "realmRoles": ["clinico"]
     },
     {
-      "username": "admin@hsll.es", "email": "admin@hsll.es",
+      "username": "admin@example.local", "email": "admin@example.local",
       "enabled": true, "emailVerified": true,
-      "credentials": [{"type": "password", "value": "admin", "temporary": false}],
+      "credentials": [{"type": "password", "value": "CHANGE_ME_DEV_ONLY_ADMIN", "temporary": false}],
       "realmRoles": ["admin"]
     },
     {
-      "username": "auditor@hsll.es", "email": "auditor@hsll.es",
+      "username": "auditor@example.local", "email": "auditor@example.local",
       "enabled": true, "emailVerified": true,
-      "credentials": [{"type": "password", "value": "auditor", "temporary": false}],
+      "credentials": [{"type": "password", "value": "CHANGE_ME_DEV_ONLY_AUDITOR", "temporary": false}],
       "realmRoles": ["auditor"]
     }
   ]

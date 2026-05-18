@@ -1,0 +1,112 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{newtxtext,newtxmath}
+\usepackage[top=1.2cm, bottom=1.2cm, left=1.5cm, right=1.5cm]{geometry}
+\usepackage[final,expansion=false]{microtype}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{tabularx}
+
+\hypersetup{colorlinks=true, urlcolor=black, linkcolor=black}
+
+\definecolor{accent}{HTML}{8b3a2f}
+
+\titleformat{\section}{\normalfont\normalsize\bfseries\color{accent}}{}{0pt}{}
+\titlespacing*{\section}{0pt}{3pt}{1pt}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+\linespread{0.94}
+
+\pagestyle{empty}
+
+\begin{document}
+
+\begin{center}
+{\large\bfseries Preservación de la identidad vocal del paciente mediante clonación de voz \emph{zero-shot}, \emph{watermarking} y \emph{anti-spoofing} en un entorno hospitalario \emph{on-premise}}\\[2pt]
+{\small Premios Salut Innova UIB-HLL Son Espases · 4ª edición (2026)}
+\end{center}
+
+\vspace{-4pt}
+\hrule
+\vspace{3pt}
+
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\textbf{Categoría:} & Inteligencia artificial y datos masivos (\emph{big data}) \\
+\textbf{Proponentes:} & Marc Link Cladera (graduado, EPS-UIB) · Andrés Borrás Santos (graduado, EPS-UIB) \\
+& Antonio Contestí Coll (graduado, EPS-UIB) \\
+& Dra.~Amaya Roldán Fidalgo (FEA, Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello, Hospital Universitario Son Llàtzer, IB-Salut) \\
+\textbf{Origen:} & desarrollo en el marco del convenio UIB · IB-Salut · FUEIB; aplicación clínica \emph{on-premise} a partir de un \emph{benchmark} previo de 528 generaciones sobre cuatro modelos \emph{open-weight} de clonación de voz en castellano peninsular. \\
+\end{tabularx}
+
+\vspace{1pt}
+
+\section*{1. Justificación clínica}
+
+La voz es un componente esencial de la identidad personal. En pacientes con \textbf{cáncer de laringe}, \textbf{cirugía de cabeza y cuello}, \textbf{esclerosis lateral amiotrófica (ELA)}, \textbf{intubación prolongada} o \textbf{daño neurológico}, la pérdida del habla afecta a la comunicación funcional pero también a la autoestima, a la interacción social y a la adherencia terapéutica. El Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello del Hospital Universitario Son Llàtzer impulsa este proyecto para que el paciente pueda, antes de perder su voz o a partir de voz residual, \textbf{conservar su identidad vocal en forma de un perfil sintético reutilizable} para comunicación asistida, lectura de informes o mensajes personales. Hoy, los servicios comerciales que permiten esto exigen subir audio biométrico a servidores fuera de la UE, sin marca de agua detectable por el operador y sin base legal específica bajo el art.~9 del RGPD ni del art.~50 de la Ley de IA UE 2024/1689. El proyecto resuelve esa brecha desplegando el sistema íntegramente \emph{on-premise} en la infraestructura del hospital, sin tránsito a la nube, con consentimiento específico y trazabilidad forense en cada audio sintético.
+
+\section*{2. Innovación propuesta}
+
+El sistema implementa un \textbf{pipeline clínico completo de clonación de voz \emph{zero-shot}} con tres modelos \emph{open-weight} integrados y un cuarto modelo comercial bloqueado por defecto. Frontend Vue~3 trilingüe con grabador propio (\emph{spectrograma} en vivo, VU meter, \emph{downsample} a 16~kHz mono PCM 16-bit) y consentimiento renderizado por el servidor. Backend FastAPI asíncrono con SQLAlchemy~2 (\emph{async}), migraciones Alembic, OIDC \emph{mock} HS256 con migración a Keycloak en piloto, y \emph{audit log append-only} con cadena de hashes SHA-256 verificable extremo a extremo. Workers nativos sobre la GPU \textbf{NVIDIA DGX Spark} (chip Grace Blackwell GB10, ARM64, CUDA 13.0, 130~GB VRAM unificada) con \emph{LRU eviction} tras 10~min, una cola RabbitMQ por modelo y Redis \emph{pub/sub} para progreso en tiempo real. \textbf{Toda síntesis pasa por dos salvaguardas obligatorias}: (i)~marca de agua imperceptible --- PerTh nativo en Chatterbox (verificado 132/132 en el \emph{benchmark}) o AudioSeal post-hoc en OmniVoice y Qwen3-TTS--- con \emph{verify} almacenado; (ii)~puntuación AASIST \emph{anti-spoofing} persistida por \emph{job}, deseablemente alta (audio claramente detectable como sintético). Almacenamiento en MinIO cifrado con KMS Vault \emph{transit}. La integración con ElevenLabs queda \emph{deshabilitada por defecto} con modal de confirmación bloqueante, persistiendo \texttt{deployment\_safe=false} y \texttt{watermark\_scheme=none}; uso restringido a comparativas no clínicas. Empaquetado en Docker Compose para piloto multi-host (PC + Spark) y en \emph{Helm chart} con \emph{ExternalSecrets}/\emph{SealedSecrets} para producción en Kubernetes.
+
+\section*{3. Apoyo al estado del arte}
+
+El proyecto evalúa con criterios reproducibles el panorama \emph{open-weight} 2026 de clonación de voz \emph{zero-shot} ---codec LM, no autorregresivos, \emph{flow matching}, diffusion--- y avanza con cuatro aportaciones: (i)~un \textbf{\emph{benchmark} de 528 generaciones} (4~modelos $\times$ 4~locutores VoxPopuli-ES $\times$ 3~longitudes de referencia $\times$ 11~frases, tasa de fallo 0\,\%) con métricas automáticas WER (\emph{faster-whisper large-v3}), UTMOS22 real, similitud WavLM-large, similitud ECAPA-TDNN, AASIST y verificación de \emph{watermark}; (ii)~un conjunto de \textbf{\emph{decision gates}} fijados \emph{a~priori} (WER\,$<$\,8\,\%, UTMOS\,$\geq$\,3{,}5, sim WavLM\,$>$\,0{,}75, TTFA\,$<$\,3\,s, licencia permisiva, fallos\,$<$\,5\,\%) que evitan la trampa habitual de la comparación basada en \emph{demos}; (iii)~la \textbf{cuantificación del riesgo \emph{anti-spoofing} en XTTS-v2} ---score AASIST de 0{,}053, audio prácticamente indistinguible de humano---, junto con el dictamen sobre su licencia CPML, motivan su exclusión clínica; (iv)~la posición pública sobre ElevenLabs: incumple el art.~50 de la Ley de IA UE 2024/1689 sobre trazabilidad por ausencia de marca de agua detectable, y queda contractualmente bloqueada para datos clínicos.
+
+\section*{4. Contribución original}
+
+La aportación más original es la \textbf{traslación de las salvaguardas regulatorias a artefactos verificables del sistema}: cada audio sintético lleva marca de agua imperceptible \emph{verificable post-hoc}, un score AASIST persistido y una entrada en el \emph{audit log} con \emph{hash} encadenado SHA-256 que un auditor externo puede recorrer. La selección de modelos no se justifica con eslóganes sino con un \emph{benchmark} de 528 generaciones cuyos resultados crudos y \emph{decision gates} están publicados. La arquitectura es \emph{on-premise} por construcción: ninguna voz de paciente abandona la red hospitalaria, y la única integración comercial (ElevenLabs) queda contractualmente bloqueada para datos clínicos. La aplicación cierra el ciclo: consentimiento específico, captura, perfil de voz, síntesis, watermark, anti-spoofing, auditoría y entrega firmada al clínico, todo en una pieza desplegable.
+
+\section*{5. Resultados clave}
+
+\renewcommand{\arraystretch}{1.1}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\textbf{Cobertura del \emph{benchmark}} & \textbf{528}~generaciones · 4~modelos · 4~locutores VoxPopuli-ES (2M+2F) · 3~longitudes de referencia (3, 10, 30\,s) · 11~frases · tasa de fallo \textbf{0\,\%}. \\
+\textbf{Chatterbox (MIT, por defecto)} & WER \textbf{8{,}0\,\%} · UTMOS22 \textbf{3{,}11} · sim WavLM 0{,}707 · AASIST 0{,}471 · \emph{watermark} PerTh \textbf{132/132} · TTFA 3{,}2\,s · RTF 0{,}50. \\
+\textbf{OmniVoice (Apache~2.0)} & Mejor similitud de locutor: sim WavLM \textbf{0{,}787} · sim ECAPA-TDNN \textbf{0{,}756} · AudioSeal post-hoc obligatorio. \\
+\textbf{Qwen3-TTS (Apache~2.0)} & WER 8{,}6\,\% · UTMOS22 \textbf{3{,}11} · sim WavLM 0{,}775 · AASIST 0{,}629 · \emph{venv} aislado \texttt{transformers<5}. \\
+\textbf{XTTS-v2 (CPML, excluido)} & AASIST \textbf{0{,}053} (riesgo \emph{anti-spoofing} crítico) + bloqueo de licencia hasta dictamen jurídico. \\
+\textbf{ElevenLabs (no clínico)} & Sin \emph{watermark} detectable $\Rightarrow$ incompatible con art.~50 Ley IA UE 2024/1689; bloqueado por defecto. \\
+\textbf{Latencia extremo a extremo} & \textbf{3--7\,s} según modelo, incluyendo cola, inferencia, postproceso \emph{watermark} y AASIST. \\
+\textbf{Hardware} & DGX Spark GB10, ARM64, CUDA 13.0, 130\,GB VRAM unificada. Compartido por LRU con otros tenants del hospital. \\
+\end{tabularx}
+
+\section*{6. Impacto económico y social}
+
+\textbf{Para el paciente:} preserva la identidad vocal antes o después de una cirugía oncológica de cabeza y cuello, una laringectomía o el avance de una enfermedad neuromuscular, ofreciendo continuidad emocional y autonomía comunicativa con su propia voz. \textbf{Para el sistema sanitario:} elimina la dependencia de servicios cloud cuyo uso clínico sería incompatible con RGPD, art.~9 (dato biométrico) y con el art.~50 de la Ley de IA UE 2024/1689 (trazabilidad); reutiliza la infraestructura GPU compartida del hospital ya desplegada para otros proyectos asistenciales. \textbf{Para la investigación:} la publicación del protocolo de \emph{benchmark}, de los \emph{decision gates} y del posicionamiento ético-jurídico sobre licencias (CPML, condiciones comerciales) y sobre \emph{watermarking} obligatorio cubre un hueco poco documentado en el ámbito hospitalario. \textbf{Para la sociedad:} código y documentación publicados en GitHub bajo licencia CC BY-NC 4.0; refuerza la soberanía de datos sanitarios.
+
+\section*{7. Cooperación UIB · IB-Salut}
+
+\begin{itemize}[leftmargin=1.2em, itemsep=1pt, topsep=1pt]
+\item \textbf{UIB} (Escola Politècnica Superior) --- Marc Link Cladera, Andrés Borrás Santos y Antonio Contestí Coll, graduados en Ingeniería Informática, asumen el diseño técnico, la implementación, la auditoría algorítmica, el \emph{benchmark} de 528 generaciones y la integración \emph{end-to-end}.
+\item \textbf{IB-Salut, Hospital Universitario Son Llàtzer} --- Dra.~Amaya Roldán Fidalgo, FEA del Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello, aporta la definición de la población diana, los protocolos de captura de voz residual, los criterios de aceptación clínica y la coordinación con consultas de Logopedia, Rehabilitación y Maxilofacial.
+\item \textbf{Marco institucional} --- convenio UIB · IB-Salut · FUEIB en vigor, alineado con la línea estratégica de IA clínica del HUSLL y con la infraestructura GPU compartida del hospital.
+\item \textbf{Equipo mixto por construcción} --- la candidatura cumple el criterio de Cooperación UIB · IB-Salut (10\,\%) sin necesidad de adaptaciones; el liderazgo clínico y el liderazgo técnico están repartidos por diseño desde el origen del proyecto.
+\end{itemize}
+
+\section*{8. Madurez del proyecto}
+
+El sistema es un \textbf{prototipo operativo} desplegable extremo a extremo, con \emph{benchmark} reproducible publicado y arquitectura validada en Docker Compose multi-host y en \emph{Helm chart} para Kubernetes. \emph{Trabajo en curso:} aprobación del protocolo de escucha ciega clínica por el Comité de Ética Asistencial, dictamen del Servicio Jurídico sobre la licencia CPML de XTTS-v2, \emph{fine-tuning} con voz propia del paciente sobre 2--5\,h de audio para la fase de validación clínica, e integración con SISN2 y consultas de Logopedia. \emph{Trabajo futuro:} publicación científica del marco de salvaguardas (\emph{watermark} + AASIST + \emph{audit chain}) y de la postura sobre licencias \emph{open-weight} en el ámbito sanitario europeo.
+
+\vspace{2pt}
+\hrule
+\vspace{3pt}
+
+{\small
+\textbf{Material disponible para evaluación:}\\[1pt]
+\begin{tabular}{@{}ll@{}}
+Repositorio público del proyecto & \url{https://github.com/tcontesti/voice_cloning_app} \\
+\emph{Landing page} (presentación visual) & \url{https://tcontesti.github.io/voice_cloning_app/} \\
+Documentación técnica (\emph{wiki}, 10 páginas) & \url{https://github.com/tcontesti/voice_cloning_app/wiki} \\
+Resumen ejecutivo (este documento, PDF) & \url{https://github.com/tcontesti/voice_cloning_app/tree/main/docs} \\
+Documentación técnica adicional & \url{https://github.com/tcontesti/voice_cloning_app/tree/main/docs} \\
+Memoria académica completa & pendiente de redacción \\
+Demostración en vivo del prototipo & \emph{disponible bajo demanda en LAN Hospital Universitario Son Llàtzer} \\
+\end{tabular}}
+
+\end{document}

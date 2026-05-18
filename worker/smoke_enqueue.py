@@ -5,7 +5,7 @@ Usage (from voice_cloning_app/ with the main venv):
     ~/voice_cloning_env/.venv/bin/python worker/smoke_enqueue.py \
         --model chatterbox \
         --text "Hola, prueba clínica." \
-        --ref  /home/husll-spark-01/voice_cloning/datasets/reference_clips/spk01_male_10s.wav
+        --ref  /home/SPARK_USER/voice_cloning/datasets/reference_clips/spk01_male_10s.wav
 
 What it does:
     1. Reads the ref WAV, sha256s it, uploads to MinIO under `recordings/`.

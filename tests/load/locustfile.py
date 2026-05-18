@@ -33,13 +33,13 @@ class PacienteUser(HttpUser):
     weight = 8
 
     def on_start(self) -> None:
-        # In prod the seed creates paciente@hsll.es / paciente. For load
+        # In prod the seed creates paciente@example.local / paciente. For load
         # tests we use those creds directly (single shared account is OK for
         # read paths; for synthesis we want fresh per-VU state which the
         # user_id in the token handles).
         r = self.client.post(
             "/auth/login",
-            json={"email": "paciente@hsll.es", "password": "paciente"},
+            json={"email": "paciente@example.local", "password": "paciente"},
             name="/auth/login",
         )
         if r.status_code != 200:
@@ -97,7 +97,7 @@ class AuditorUser(HttpUser):
     def on_start(self) -> None:
         r = self.client.post(
             "/auth/login",
-            json={"email": "auditor@hsll.es", "password": "auditor"},
+            json={"email": "auditor@example.local", "password": "auditor"},
             name="/auth/login",
         )
         self.headers = {"Authorization": f"Bearer {r.json()['access_token']}"}

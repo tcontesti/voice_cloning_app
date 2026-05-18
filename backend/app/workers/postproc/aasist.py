@@ -1,7 +1,7 @@
 """AASIST anti-spoofing scorer.
 
-Reuses the same model weights downloaded under
-`/home/husll-spark-01/voice_cloning/models/aasist/` during overnight 2026-04-13.
+Reuses model weights downloaded under
+`$VC_AASIST_DIR` (default: `/home/SPARK_USER/voice_cloning/models/aasist/`).
 We load lazily and keep a singleton so subsequent calls reuse VRAM.
 
 Output range convention: higher = more "spoof-like" per the upstream model
@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 from scipy.signal import resample_poly
 
-AASIST_DIR = Path(os.environ.get("VC_AASIST_DIR", "/home/husll-spark-01/voice_cloning/models/aasist"))
+AASIST_DIR = Path(os.environ.get("VC_AASIST_DIR", "/home/SPARK_USER/voice_cloning/models/aasist"))
 
 _model = None
 _torch = None

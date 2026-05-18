@@ -1,20 +1,60 @@
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
+venv/
+
+# Env / secrets
 .env
 .env.local
+.env.production
 .env.multihost
-backups/
+!*.example
+
+# Test / build artifacts
 .coverage
 htmlcov/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+backups/
+
+# Frontend
 node_modules/
 dist/
 .vite/
+frontend/.tsbuild-node/
+frontend/tsconfig.tsbuildinfo
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Logs
 *.log
+
+# LaTeX aux
+*.aux
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.toc
+
+# TLS dev certs
 infra/nginx/certs/*
 !infra/nginx/certs/.gitkeep
+
+# Model weights / heavy binaries (never versioned)
+*.pt
+*.pth
+*.onnx
+*.safetensors
+*.bin
+*.gguf
+*.ckpt
+
+# Local Claude assistant config (not part of project artifacts)
+.claude/
+CLAUDE.md

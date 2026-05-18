@@ -13,10 +13,10 @@ from app.db.session import AsyncSessionLocal
 from app.services import users as users_svc
 
 SEED = [
-    ("paciente@hsll.es", "paciente", UserRole.paciente, "Paciente Demo"),
-    ("clinico@hsll.es", "clinico", UserRole.clinico, "Clínico Demo"),
-    ("admin@hsll.es", "admin", UserRole.admin, "Admin Demo"),
-    ("auditor@hsll.es", "auditor", UserRole.auditor, "Auditor Demo"),
+    ("paciente@example.local", "paciente", UserRole.paciente, "Paciente Demo"),
+    ("clinico@example.local", "clinico", UserRole.clinico, "Clínico Demo"),
+    ("admin@example.local", "admin", UserRole.admin, "Admin Demo"),
+    ("auditor@example.local", "auditor", UserRole.auditor, "Auditor Demo"),
 ]
 
 

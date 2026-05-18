@@ -29,7 +29,7 @@ def _lazy_import() -> None:
     global _OmniVoice, _torch
     if _OmniVoice is not None:
         return
-    patches_dir = os.environ.get("VC_SCRIPTS_DIR", "/home/husll-spark-01/voice_cloning/scripts")
+    patches_dir = os.environ.get("VC_SCRIPTS_DIR", "/home/SPARK_USER/voice_cloning/scripts")
     if patches_dir not in sys.path:
         sys.path.insert(0, patches_dir)
     import _patches  # noqa: F401

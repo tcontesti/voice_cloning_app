@@ -69,7 +69,7 @@ docker compose -f infra\compose\docker-compose.multihost.yml --env-file infra\co
 docker compose -f infra\compose\docker-compose.multihost.yml --env-file infra\compose\.env.multihost exec backend python -m scripts.seed_users
 ```
 
-Desde el navegador en `http://localhost:5173` → login con `paciente@hsll.es / paciente`, sube una referencia, genera una síntesis. Si llega a `done` con el watermark verificado, el flujo extremo-a-extremo funciona.
+Desde el navegador en `http://localhost:5173` → login con `paciente@example.local / <password seed>`, sube una referencia, genera una síntesis. Si llega a `done` con el watermark verificado, el flujo extremo-a-extremo funciona.
 
 ## Troubleshooting
 
@@ -160,13 +160,13 @@ con la máquina.
    ```
 3. Loguear ambos con la **misma cuenta** Tailscale.
 4. Obtener el hostname MagicDNS de la Spark (aparece en `tailscale status`),
-   típicamente `spark-d03c.tail-xxxxx.ts.net`.
+   típicamente `SPARK_HOST.tail-xxxxx.ts.net`.
 5. Editar `~/.ssh/config` en Windows:
    ```
    Host spark
-       Hostname spark-d03c.tail-xxxxx.ts.net
+       Hostname SPARK_HOST.tail-xxxxx.ts.net
        # o: Hostname 100.x.x.x
-       User tonic
+       User SPARK_USER
        IdentityFile ~/.ssh/id_ed25519
    ```
 

@@ -39,7 +39,7 @@ _real_stdout = sys.stdout
 sys.stdout = sys.stderr
 
 # Apply Qwen-specific patches (transformers 5 shims) before any qwen import.
-_SCRIPTS = os.environ.get("VC_SCRIPTS_DIR", "/home/husll-spark-01/voice_cloning/scripts")
+_SCRIPTS = os.environ.get("VC_SCRIPTS_DIR", "/home/SPARK_USER/voice_cloning/scripts")
 if _SCRIPTS not in sys.path:
     sys.path.insert(0, _SCRIPTS)
 import _patches_qwen  # noqa: F401, E402

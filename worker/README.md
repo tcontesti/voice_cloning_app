@@ -59,7 +59,7 @@ journalctl --user -u worker_chatterbox -f
 In dev the Windows FastAPI reaches Spark via SSH tunnel:
 ```bash
 ssh -L 5672:localhost:5672 -L 6379:localhost:6379 -L 9000:localhost:9000 \
-    -L 5432:localhost:5432 husll-spark-01
+    -L 5432:localhost:5432 SPARK_USER@SPARK_HOST
 ```
 
 ## Lazy-load LRU

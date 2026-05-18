@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voice Cloning Clínico — Preservación de la identidad vocal · UIB & HUSLL</title>
+<meta name="description" content="Aplicación clínica on-premise de clonación de voz zero-shot, watermarking y anti-spoofing para preservar la identidad vocal de pacientes con cáncer de laringe, ELA y patologías que amenazan el habla. Colaboración Universitat de les Illes Balears y Hospital Universitario Son Llàtzer.">
+<meta name="author" content="Marc Link Cladera, Andrés Borrás Santos, Antonio Contestí Coll">
+<meta property="og:title" content="Voice Cloning Clínico — Preservación de la identidad vocal del paciente">
+<meta property="og:description" content="Plataforma hospitalaria on-premise de clonación de voz con watermarking, anti-spoofing AASIST y consentimiento RGPD/Ley IA. Candidatura Premios Salut Innova UIB-HLL 2026.">
+<meta property="og:type" content="article">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;300;400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,300;1,6..72,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['"Inter Tight"', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+          serif: ['Newsreader', 'Georgia', 'serif'],
+          mono: ['"JetBrains Mono"', 'monospace'],
+        },
+        colors: {
+          paper: '#fafaf9',
+          ink: {
+            DEFAULT: '#0a0a0a',
+            900: '#0a0a0a',
+            800: '#171717',
+            700: '#262626',
+            600: '#404040',
+            500: '#737373',
+            400: '#a3a3a3',
+            300: '#d4d4d4',
+            200: '#e5e5e5',
+            100: '#f5f5f5',
+            50: '#fafafa',
+          },
+        },
+        letterSpacing: {
+          'tightest': '-0.04em',
+          'tighter-2': '-0.025em',
+          'micro': '0.12em',
+          'wider-2': '0.18em',
+          'widest-2': '0.24em',
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  html, body { background: #fafaf9; color: #0a0a0a; }
+  body {
+    font-feature-settings: "ss01", "ss02", "cv11", "cv02";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .display { font-feature-settings: "ss01", "cv11"; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum", "ss01"; }
+  .rule-top    { box-shadow: inset 0 1px 0 #e5e5e5; }
+  .rule-bottom { box-shadow: inset 0 -1px 0 #e5e5e5; }
+  .rule-left   { box-shadow: inset 1px 0 0 #e5e5e5; }
+  .link-u { position: relative; display: inline-block; }
+  .link-u::after {
+    content: '';
+    position: absolute;
+    left: 0; bottom: -2px;
+    width: 100%; height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .link-u:hover::after { transform: scaleX(1); transform-origin: left; }
+  .fade { opacity: 0; animation: fadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .d-1 { animation-delay: 0.05s; }
+  .d-2 { animation-delay: 0.15s; }
+  .d-3 { animation-delay: 0.25s; }
+  .d-4 { animation-delay: 0.35s; }
+  .d-5 { animation-delay: 0.45s; }
+  @keyframes fadeIn { to { opacity: 1; } }
+  .index-num { font-family: '"JetBrains Mono"', monospace; font-variant-numeric: tabular-nums; }
+  pre.ascii {
+    font-family: '"JetBrains Mono"', monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #404040;
+    white-space: pre;
+    overflow-x: auto;
+  }
+</style>
+</head>
+
+<body class="font-sans text-ink">
+
+<!-- TOPBAR -->
+<div class="border-b border-ink-200">
+  <div class="max-w-screen-xl mx-auto px-6 sm:px-10 py-4 flex items-baseline justify-between text-[11px] uppercase tracking-widest-2 text-ink-500">
+    <div class="font-medium">
+      <span class="text-ink-800">UIB</span> &nbsp;·&nbsp; EPS &nbsp;·&nbsp; H. Son Llàtzer &nbsp;·&nbsp; IB-Salut &nbsp;·&nbsp; 2025—2026
+    </div>
+    <div class="hidden sm:flex gap-8">
+      <a href="#trabajo" class="link-u hover:text-ink-800 transition-colors">Trabajo</a>
+      <a href="#prototipo" class="link-u hover:text-ink-800 transition-colors">Prototipo</a>
+      <a href="#colaboraciones" class="link-u hover:text-ink-800 transition-colors">Colaboraciones</a>
+      <a href="#material" class="link-u hover:text-ink-800 transition-colors">Material</a>
+    </div>
+  </div>
+</div>
+
+<!-- HERO -->
+<header class="border-b border-ink-200">
+  <div class="max-w-screen-xl mx-auto px-6 sm:px-10 pt-24 pb-32 sm:pt-40 sm:pb-48">
+    <div class="grid grid-cols-12 gap-6 sm:gap-10">
+
+      <div class="col-span-12 sm:col-span-3 fade d-1">
+        <div class="text-[11px] uppercase tracking-widest-2 text-ink-500 mb-3">UIB — EPS · HUSLL</div>
+        <div class="num text-[11px] tracking-wider text-ink-400">
+          MMXXVI / I
+        </div>
+        <div class="mt-6 text-[10px] uppercase tracking-widest-2 text-ink-400">
+          Salut Innova<br>4ª edición · IA y big data
+        </div>
+      </div>
+
+      <div class="col-span-12 sm:col-span-9">
+        <h1 class="fade d-2 display font-sans font-light text-[clamp(2.5rem,6.5vw,6rem)] leading-[0.95] tracking-tightest text-ink">
+          Voice Cloning Clínico<span class="text-ink-300">.</span>
+        </h1>
+
+        <p class="fade d-3 mt-10 font-serif italic text-2xl sm:text-3xl leading-snug text-ink-700 max-w-3xl">
+          Preservación de la identidad vocal del paciente.
+        </p>
+
+        <p class="fade d-4 mt-12 max-w-2xl text-base sm:text-lg leading-relaxed text-ink-600">
+          Plataforma hospitalaria <em class="font-serif italic">on-premise</em> de clonación de voz <em class="font-serif italic">zero-shot</em> sobre castellano peninsular, con marca de agua imperceptible PerTh/AudioSeal, anti-spoofing AASIST, consentimiento específico bajo RGPD y Ley de IA UE 2024/1689, y audit log <em class="font-serif italic">append-only</em>. Para pacientes con cáncer de laringe, cirugía de cabeza y cuello, ELA, o intubación prolongada.
+        </p>
+
+        <div class="fade d-5 mt-16 flex flex-wrap gap-8 text-sm">
+          <a href="https://github.com/tcontesti/voice_cloning_app/blob/main/docs/Resumen_Ejecutivo_VoiceCloning.pdf"
+             class="link-u font-medium text-ink-900">
+            Resumen ejecutivo (2 págs) <span class="text-ink-400 ml-1">↗</span>
+          </a>
+          <a href="https://github.com/tcontesti/voice_cloning_app/wiki"
+             class="link-u text-ink-500 hover:text-ink-900 transition-colors">
+            Wiki del proyecto
+          </a>
+          <a href="https://github.com/tcontesti/voice_cloning_app"
+             class="link-u text-ink-500 hover:text-ink-900 transition-colors">
+            Código fuente
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</header>
+
+<!-- METADATOS -->
+<section class="border-b border-ink-200">
+  <div class="max-w-screen-xl mx-auto px-6 sm:px-10 py-12">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-10 text-sm">
+      <div>
+        <div class="text-[10px] uppercase tracking-widest-2 text-ink-400 mb-2">Equipo UIB</div>
+        <div class="text-ink-900">Marc Link Cladera</div>
+        <div class="text-ink-900">Andrés Borrás Santos</div>
+        <div class="text-ink-900">Antonio Contestí Coll</div>
+        <div class="text-ink-500 text-xs mt-1">EPS · UIB · graduados Ing. Informática</div>
+      </div>
+      <div>
+        <div class="text-[10px] uppercase tracking-widest-2 text-ink-400 mb-2">Colaboración clínica</div>
+        <div class="text-ink-900">Dra. Amaya Roldán Fidalgo</div>
+        <div class="text-ink-500 text-xs mt-1">FEA · Servicio de Otorrinolaringología<br>y Cirugía de Cabeza y Cuello</div>
+        <div class="text-ink-500 text-xs mt-1">H. U. Son Llàtzer · IB-Salut</div>
+      </div>
+      <div>
+        <div class="text-[10px] uppercase tracking-widest-2 text-ink-400 mb-2">Marco</div>
+        <div class="text-ink-900">Convenio UIB · IB-Salut · FUEIB</div>
+        <div class="text-ink-500 text-xs mt-1">Equipo mixto académico-clínico</div>
+      </div>
+      <div>
+        <div class="text-[10px] uppercase tracking-widest-2 text-ink-400 mb-2">Cumplimiento</div>
+        <div class="text-ink-900">RGPD art. 9 (biométrico)</div>
+        <div class="text-ink-900">Ley IA UE 2024/1689</div>
+        <div class="text-ink-500 text-xs mt-1">On-premise · sin tránsito cloud</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NUMBERS -->
+<section class="border-b border-ink-200">
+  <div class="max-w-screen-xl mx-auto px-6 sm:px-10 py-20 sm:py-28">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-y-12 md:gap-0">
+      <div class="md:rule-left md:pl-10">
+        <div class="num display font-light text-6xl sm:text-7xl tracking-tightest text-ink">528</div>
+        <div class="mt-3 text-[11px] uppercase tracking-widest-2 text-ink-500">Generaciones de benchmark · 0% fallos</div>
+      </div>
+      <div class="md:rule-left md:pl-10">
+        <div class="num display font-light text-6xl sm:text-7xl tracking-tightest text-ink">8.0<span class="text-ink-400 text-3xl align-top">%</span></div>
+        <div class="mt-3 text-[11px] uppercase tracking-widest-2 text-ink-500">WER castellano · Chatterbox</div>
+      </div>
+      <div class="md:rule-left md:pl-10">
+        <div class="num display font-light text-6xl sm:text-7xl tracking-tightest text-ink">0.787</div>
+        <div class="mt-3 text-[11px] uppercase tracking-widest-2 text-ink-500">Similitud WavLM · OmniVoice</div>
+      </div>
+      <div class="md:rule-left md:pl-10">
+        <div class="num display font-light text-6xl sm:text-7xl tracking-tightest text-ink">132<span class="text-ink-400 text-3xl align-top">/132</span></div>
+        <div class="mt-3 text-[11px] uppercase tracking-widest-2 text-ink-500">Watermarks PerTh verificados</div>
+      </div>
+    </div>
+    <div class="mt-12 text-xs text-ink-500 leading-relaxed max-w-3xl">
+      Benchmark sobre 4 modelos × 4 locutores VoxPopuli-ES (2M+2F) × 3 longitudes de referencia (3 s / 10 s / 30 s) × 11 frases. Métricas automáticas: WER faster-whisper, UTMOS22, similitud WavLM-large y ECAPA-TDNN, AASIST anti-spoofing, watermark PerTh + AudioSeal. Decision gates revisados tras ejecución overnight 2026-04-13/14.
+    </div>
+  </div>
+</section>
+
+<!-- TRABAJO -->
+<section id="trabajo" class="border-b border-ink-200">
+  <div class="max-w-screen-xl mx-auto px-6 sm:px-10 py-24 sm:py-32">
+
+    <div class="grid grid-cols-12 gap-6 sm:gap-10 mb-24">
+      <div class="col-span-12 sm:col-span-3">
+        <div class="index-num text-[11px] tracking-wider text-ink-400">01 — Trabajo</div>
+      </div>
+      <div class="col-span-12 sm:col-span-9">
+        <h2 class="display font-light text-4xl sm:text-5xl leading-[1.05] tracking-tighter-2 text-ink max-w-2xl">
+          Cuatro aportaciones que <span class="font-serif italic text-ink-700">se sostienen mutuamente</span>.
+        </h2>
+      </div>
+    </div>
+
+    <div class="space-y-px">
+      <article class="grid grid-cols-12 gap-6 sm:gap-10 py-12 rule-top">
+        <div class="col-span-12 sm:col-span-3">
+          <div class="index-num text-[11px] tracking-wider text-ink-500">A · BENCHMARK</div>
+        </div>
+        <div class="col-span-12 sm:col-span-9">
+          <h3 class="text-xl sm:text-2xl font-medium leading-snug text-ink mb-4 tracking-tighter-2">
+            Benchmark reproducible en castellano peninsular
+          </h3>
+          <p class="text-ink-600 leading-relaxed max-w-2xl">
+            Evaluación honesta de Chatterbox, OmniVoice, Qwen3-TTS y XTTS-v2 sobre VoxPopuli-ES con métricas automáticas (WER, UTMOS22 real, similitud WavLM-large y ECAPA-TDNN) y <em class="font-serif italic">decision gates</em> definidos a priori. La selección de modelos integrados se justifica con datos, no con demos sueltas. XTTS-v2 queda excluido por su licencia CPML hasta dictamen jurídico.
+          </p>
+        </div>
+      </article>
+
+      <article class="grid grid-cols-12 gap-6 sm:gap-10 py-12 rule-top">
+        <div class="col-span-12 sm:col-span-3">
+          <div class="index-num text-[11px] tracking-wider text-ink-500">B · WATERMARK + ANTI-SPOOFING</div>
+        </div>
+        <div class="col-span-12 sm:col-span-9">
+          <h3 class="text-xl sm:text-2xl font-medium leading-snug text-ink mb-4 tracking-tighter-2">
+            Trazabilidad forense desde el día uno
+          </h3>
+          <p class="text-ink-600 leading-relaxed max-w-2xl">
+            Marca de agua imperceptible en toda síntesis (PerTh nativo en Chatterbox, AudioSeal post-hoc en OmniVoice y Qwen3-TTS) verificada con <code class="font-mono text-sm">resemble-perth</code> y AudioSeal detector. Anti-spoofing AASIST sobre cada salida. Ningún audio sintético abandona el sistema sin marca y sin <em class="font-serif italic">score</em> de detección almacenado. Cumple art. 50 de la Ley IA UE sobre trazabilidad de contenido sintético.
+          </p>
+        </div>
+      </article>
+
+      <article class="grid grid-cols-12 gap-6 sm:gap-10 py-12 rule-top">
+        <div class="col-span-12 sm:col-span-3">
+          <div class="index-num text-[11px] tracking-wider text-ink-500">C · RGPD ON-PREM</div>
+        </div>
+        <div class="col-span-12 sm:col-span-9">
+          <h3 class="text-xl sm:text-2xl font-medium leading-snug text-ink mb-4 tracking-tighter-2">
+            La voz no sale del hospital
+          </h3>
+          <p class="text-ink-600 leading-relaxed max-w-2xl">
+            Despliegue íntegro on-premise sobre infraestructura hospitalaria. Almacenamiento cifrado en MinIO con KMS (Vault transit). Consentimiento específico para clonación, distinto del consentimiento de grabación, con base legal art. 9 RGPD para dato biométrico. Audit log <em class="font-serif italic">append-only</em> con cadena de hashes (SHA-256). ElevenLabs queda integrada pero deshabilitada por defecto y bloqueada para audio clínico.
+          </p>
+        </div>
+      </article>
+
+      <article class="grid grid-cols-12 gap-6 sm:gap-10 py-12 rule-top rule-bottom">
+        <div class="col-span-12 sm:col-span-3">
+          <div class="index-num text-[11px] tracking-wider text-ink-500">D · APP CLÍNICA</div>
+        </div>
+        <div class="col-span-12 sm:col-span-9">
+          <h3 class="text-xl sm:text-2xl font-medium leading-snug text-ink mb-4 tracking-tighter-2">
+            Una aplicación que un radiólogo puede usar
+          </h3>
+          <p class="text-ink-600 leading-relaxed max-w-2xl">
+            Frontend Vue 3 con grabador propio (spectrograma, VU meter, downsample a 16 kHz mono), backend FastAPI asíncrono con Celery, workers nativos sobre la DGX Spark, autenticación OIDC (Keycloak en piloto), observabilidad Prometheus + Grafana + Loki, y despliegue empaquetado en Docker Compose para PC + Spark o en Helm chart para Kubernetes en producción.
+          </p>
+        </div>
+      </article>
+    </div>
+
+  </div>
+</section>
+
+<!-- PROTOTIPO -->
+<section id="prototipo" class="border-b border-ink-200">
+  <div class="max-w-screen-xl mx-auto px-6 sm:px-10 py-24 sm:py-32">
+
+    <div class="grid grid-cols-12 gap-6 sm:gap-10 mb-20">
+      <div class="col-span-12 sm:col-span-3">
+        <div class="index-num text-[11px] tracking-wider text-ink-400">02 — Prototipo</div>
+      </div>
+      <div class="col-span-12 sm:col-span-9">
+        <h2 class="display font-light text-4xl sm:text-5xl leading-[1.05] tracking-tighter-2 text-ink max-w-2xl">
+          <span class="font-serif italic text-ink-700">End-to-end</span> dentro del hospital.
+        </h2>
+        <p class="mt-8 text-ink-600 leading-relaxed max-w-2xl">
+          Arquitectura asíncrona en cinco saltos. El paciente graba voz residual desde el navegador, el backend valida y cifra, el worker en la GPU del hospital sintetiza con el modelo elegido, el postproceso aplica watermark y AASIST, y el audio queda disponible para reproducción y descarga firmada — todo dentro de la red hospitalaria, sin tránsito a la nube.
+        </p>
+      </div>
+    </div>
+
+    <pre class="ascii rule-top rule-bottom py-10 px-2 sm:px-8 my-12">
+   Paciente / Clínico
+   ┌────────────────┐
+   │   Navegador    │
+   └───────┬────────┘
+           │  HTTPS · MediaStream 16 kHz mono
+           ▼
+   ┌────────────────────────┐
+   │  Frontend  · Vue 3     │
+   │  Recorder · i18n       │
+   └───────┬────────────────┘
+           │  REST · async  /  WS progreso
+           ▼
+   ┌────────────────────────┐         ┌────────────┐
+   │  Backend   · FastAPI   │ ◄────►  │ Postgres   │
+   │  Consent · Audit chain │         │  6 tablas  │
+   └───────┬────────────────┘         └────────────┘
+           │  AMQP · synth.&lt;model&gt;
+           ▼
+   ┌────────────────────────┐         ┌────────────┐
+   │  RabbitMQ 3.13         │ ◄────►  │   Redis    │
+   └───────┬────────────────┘         │ pub / sub  │
+           │                          └────────────┘
+           ▼
+   ┌──────────────────────────────┐
+   │  Worker GPU · DGX Spark      │   ┌──────────────┐
+   │  Chatterbox · OmniVoice ·    │ ► │ MinIO + KMS  │
+   │  Qwen3-TTS  ·  AASIST · WM   │   │   Vault      │
+   └──────────────────────────────┘   └──────────────┘                </pre>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-px bg-ink-200">
+      <div class="bg-paper p-8 hover:bg-white transition-colors">
+        <div class="index-num text-[10px] tracking-widest text-ink-400 mb-4">M1</div>
+        <div class="text-base font-medium text-ink mb-1">Chatterbox</div>
+        <div class="text-xs text-ink-500 leading-relaxed">MIT · PerTh nativo · 3.2 s TTFA</div>
+      </div>
+      <div class="bg-paper p-8 hover:bg-white transition-colors">
+        <div class="index-num text-[10px] tracking-widest text-ink-400 mb-4">M2</div>
+        <div class="text-base font-medium text-ink mb-1">OmniVoice</div>
+        <div class="text-xs text-ink-500 leading-relaxed">Apache 2.0 · WavLM 0.787 · AudioSeal post-hoc</div>
+      </div>
+      <div class="bg-paper p-8 hover:bg-white transition-colors">
+        <div class="index-num text-[10px] tracking-widest text-ink-400 mb-4">M3</div>
+        <div class="text-base font-medium text-ink mb-1">Qwen3-TTS</div>
+        <div class="text-xs text-ink-500 leading-relaxed">Apache 2.0 · venv aislado · transformers&lt;5</div>
+      </div>
+      <div class="bg-paper p-8 hover:bg-white transition-colors">
+        <div class="index-num text-[10px] tracking-widest text-ink-400 mb-4">M4</div>
+        <div class="text-base font-medium text-ink mb-1">AASIST + Watermark</div>
+        <div class="text-xs text-ink-500 leading-relaxed">Anti-spoofing + trazabilidad forense</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- COLABORACIONES -->
+<section id="colaboraciones" class="border-b border-ink-200">
+  <div class="max-w-screen-xl mx-auto px-6 sm:px-10 py-24 sm:py-32">
+
+    <div class="grid grid-cols-12 gap-6 sm:gap-10 mb-20">
+      <div class="col-span-12 sm:col-span-3">
+        <div class="index-num text-[11px] tracking-wider text-ink-400">03 — Colaboraciones</div>
+      </div>
+      <div class="col-span-12 sm:col-span-9">
+        <h2 class="display font-light text-4xl sm:text-5xl leading-[1.05] tracking-tighter-2 text-ink max-w-2xl">
+          Equipo <span class="font-serif italic text-ink-700">mixto</span> UIB · IB-Salut.
+        </h2>
+        <p class="mt-8 text-ink-600 leading-relaxed max-w-2xl">
+          La candidatura cumple por construcción el criterio de Cooperación UIB · IB-Salut (10 %) de los Premios Salut Innova: el equipo combina tres graduados en Ingeniería Informática por la EPS-UIB con un servicio asistencial del Hospital Universitario Son Llàtzer.
+        </p>
+      </div>
+    </div>
+
+    <div class="space-y-px">
+      <div class="grid grid-cols-12 gap-6 sm:gap-10 py-10 rule-top items-start">
+        <div class="col-span-3 sm:col-span-2 index-num text-[11px] tracking-wider text-ink-400">i</div>
+        <div class="col-span-9 sm:col-span-3">
+          <div class="text-[11px] uppercase tracking-widest-2 text-ink-400 mb-2">Ingeniería y desarrollo</div>
+          <div class="text-lg font-medium text-ink">UIB · EPS</div>
+        </div>
+        <div class="col-span-12 sm:col-span-7">
+          <p class="text-ink-600 leading-relaxed">
+            <strong class="font-medium text-ink">Marc Link Cladera</strong>, <strong class="font-medium text-ink">Andrés Borrás Santos</strong> y <strong class="font-medium text-ink">Antonio Contestí Coll</strong>, graduados en Ingeniería Informática por la Escola Politècnica Superior de la Universitat de les Illes Balears, asumen el diseño técnico, la implementación, la auditoría algorítmica y los benchmarks reproducibles. El proyecto se integra en el convenio UIB · IB-Salut · FUEIB.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-6 sm:gap-10 py-10 rule-top items-start">
+        <div class="col-span-3 sm:col-span-2 index-num text-[11px] tracking-wider text-ink-400">ii</div>
+        <div class="col-span-9 sm:col-span-3">
+          <div class="text-[11px] uppercase tracking-widest-2 text-ink-400 mb-2">Liderazgo clínico</div>
+          <div class="text-lg font-medium text-ink">H. Son Llàtzer · ORL</div>
+        </div>
+        <div class="col-span-12 sm:col-span-7">
+          <p class="text-ink-600 leading-relaxed">
+            <strong class="font-medium text-ink">Dra. Amaya Roldán Fidalgo</strong>, Facultativo Especialista de Área del Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello del Hospital Universitario Son Llàtzer (IB-Salut), define los escenarios clínicos, valida los protocolos de captura de voz residual, establece los criterios de aceptación perceptiva y supervisa la integración con consultas de logopedia y rehabilitación.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-12 gap-6 sm:gap-10 py-10 rule-top rule-bottom items-start">
+        <div class="col-span-3 sm:col-span-2 index-num text-[11px] tracking-wider text-ink-400">iii</div>
+        <div class="col-span-9 sm:col-span-3">
+          <div class="text-[11px] uppercase tracking-widest-2 text-ink-400 mb-2">Marco institucional</div>
+          <div class="text-lg font-medium text-ink">Convenio UIB · IB-Salut</div>
+        </div>
+        <div class="col-span-12 sm:col-span-7">
+          <p class="text-ink-600 leading-relaxed">
+            Convenio UIB · IB-Salut · FUEIB en vigor. El proyecto se inscribe en la línea estratégica de IA clínica del HUSLL y aprovecha la infraestructura GPU compartida (DGX Spark, GB10 Grace Blackwell, 130 GB VRAM unificada, CUDA 13.0) ya desplegada para el resto de proyectos asistenciales del hospital.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- MATERIAL -->
+<section id="material" class="border-b border-ink-200">
+  <div class="max-w-screen-xl mx-auto px-6 sm:px-10 py-24 sm:py-32">
+
+    <div class="grid grid-cols-12 gap-6 sm:gap-10 mb-20">
+      <div class="col-span-12 sm:col-span-3">
+        <div class="index-num text-[11px] tracking-wider text-ink-400">04 — Material</div>
+      </div>
+      <div class="col-span-12 sm:col-span-9">
+        <h2 class="display font-light text-4xl sm:text-5xl leading-[1.05] tracking-tighter-2 text-ink max-w-2xl">
+          Todo está <span class="font-serif italic text-ink-700">disponible</span>.
+        </h2>
+      </div>
+    </div>
+
+    <div class="space-y-px">
+      <a href="https://github.com/tcontesti/voice_cloning_app/blob/main/docs/Resumen_Ejecutivo_VoiceCloning.pdf"
+         class="group grid grid-cols-12 gap-6 sm:gap-10 py-8 rule-top items-baseline">
+        <div class="col-span-2 sm:col-span-1 index-num text-[11px] tracking-wider text-ink-400">01</div>
+        <div class="col-span-10 sm:col-span-7">
+          <div class="text-lg sm:text-xl font-medium text-ink group-hover:text-ink-500 transition-colors">Resumen ejecutivo · Premios Salut Innova</div>
+          <div class="text-xs uppercase tracking-widest-2 text-ink-400 mt-1">PDF · 2 páginas · 8 secciones · plantilla IEEE</div>
+        </div>
+        <div class="hidden sm:block col-span-3 text-right text-sm text-ink-400 group-hover:text-ink transition-colors font-medium">
+          docs/Resumen_Ejecutivo_VoiceCloning.pdf
+        </div>
+        <div class="col-span-12 sm:col-span-1 text-right text-ink-400 group-hover:translate-x-1 group-hover:text-ink transition-all">↗</div>
+      </a>
+
+      <a href="https://github.com/tcontesti/voice_cloning_app/wiki"
+         class="group grid grid-cols-12 gap-6 sm:gap-10 py-8 rule-top items-baseline">
+        <div class="col-span-2 sm:col-span-1 index-num text-[11px] tracking-wider text-ink-400">02</div>
+        <div class="col-span-10 sm:col-span-7">
+          <div class="text-lg sm:text-xl font-medium text-ink group-hover:text-ink-500 transition-colors">Wiki del proyecto</div>
+          <div class="text-xs uppercase tracking-widest-2 text-ink-400 mt-1">Diez páginas · modelos, datasets, hardware, reproducibilidad, RGPD</div>
+        </div>
+        <div class="hidden sm:block col-span-3 text-right text-sm text-ink-400 group-hover:text-ink transition-colors font-medium">
+          voice_cloning_app / wiki
+        </div>
+        <div class="col-span-12 sm:col-span-1 text-right text-ink-400 group-hover:translate-x-1 group-hover:text-ink transition-all">↗</div>
+      </a>
+
+      <a href="https://github.com/tcontesti/voice_cloning_app"
+         class="group grid grid-cols-12 gap-6 sm:gap-10 py-8 rule-top items-baseline">
+        <div class="col-span-2 sm:col-span-1 index-num text-[11px] tracking-wider text-ink-400">03</div>
+        <div class="col-span-10 sm:col-span-7">
+          <div class="text-lg sm:text-xl font-medium text-ink group-hover:text-ink-500 transition-colors">Repositorio principal</div>
+          <div class="text-xs uppercase tracking-widest-2 text-ink-400 mt-1">Backend FastAPI · Frontend Vue 3 · Workers · Infra Docker / Helm</div>
+        </div>
+        <div class="hidden sm:block col-span-3 text-right text-sm text-ink-400 group-hover:text-ink transition-colors font-medium">
+          github.com / tcontesti / voice_cloning_app
+        </div>
+        <div class="col-span-12 sm:col-span-1 text-right text-ink-400 group-hover:translate-x-1 group-hover:text-ink transition-all">↗</div>
+      </a>
+
+      <a href="https://github.com/tcontesti/voice_cloning_app/tree/main/backend"
+         class="group grid grid-cols-12 gap-6 sm:gap-10 py-8 rule-top items-baseline">
+        <div class="col-span-2 sm:col-span-1 index-num text-[11px] tracking-wider text-ink-400">04</div>
+        <div class="col-span-10 sm:col-span-7">
+          <div class="text-lg sm:text-xl font-medium text-ink group-hover:text-ink-500 transition-colors">Backend del prototipo</div>
+          <div class="text-xs uppercase tracking-widest-2 text-ink-400 mt-1">FastAPI async · SQLAlchemy · Alembic · audit chain · Celery</div>
+        </div>
+        <div class="hidden sm:block col-span-3 text-right text-sm text-ink-400 group-hover:text-ink transition-colors font-medium">
+          voice_cloning_app / backend
+        </div>
+        <div class="col-span-12 sm:col-span-1 text-right text-ink-400 group-hover:translate-x-1 group-hover:text-ink transition-all">↗</div>
+      </a>
+
+      <a href="https://github.com/tcontesti/voice_cloning_app/tree/main/frontend"
+         class="group grid grid-cols-12 gap-6 sm:gap-10 py-8 rule-top items-baseline">
+        <div class="col-span-2 sm:col-span-1 index-num text-[11px] tracking-wider text-ink-400">05</div>
+        <div class="col-span-10 sm:col-span-7">
+          <div class="text-lg sm:text-xl font-medium text-ink group-hover:text-ink-500 transition-colors">Frontend del prototipo</div>
+          <div class="text-xs uppercase tracking-widest-2 text-ink-400 mt-1">Vue 3 · Vite · Tailwind 4 · Pinia · vue-i18n · VoiceRecorder propio</div>
+        </div>
+        <div class="hidden sm:block col-span-3 text-right text-sm text-ink-400 group-hover:text-ink transition-colors font-medium">
+          voice_cloning_app / frontend
+        </div>
+        <div class="col-span-12 sm:col-span-1 text-right text-ink-400 group-hover:translate-x-1 group-hover:text-ink transition-all">↗</div>
+      </a>
+
+      <a href="https://github.com/tcontesti/voice_cloning_app/tree/main/docs"
+         class="group grid grid-cols-12 gap-6 sm:gap-10 py-8 rule-top rule-bottom items-baseline">
+        <div class="col-span-2 sm:col-span-1 index-num text-[11px] tracking-wider text-ink-400">06</div>
+        <div class="col-span-10 sm:col-span-7">
+          <div class="text-lg sm:text-xl font-medium text-ink group-hover:text-ink-500 transition-colors">Documentación técnica</div>
+          <div class="text-xs uppercase tracking-widest-2 text-ink-400 mt-1">Arquitectura · seguridad · RGPD · ADRs · despliegue · dev multihost</div>
+        </div>
+        <div class="hidden sm:block col-span-3 text-right text-sm text-ink-400 group-hover:text-ink transition-colors font-medium">
+          voice_cloning_app / docs
+        </div>
+        <div class="col-span-12 sm:col-span-1 text-right text-ink-400 group-hover:translate-x-1 group-hover:text-ink transition-all">↗</div>
+      </a>
+    </div>
+
+  </div>
+</section>
+
+<!-- CITA -->
+<section class="border-b border-ink-200">
+  <div class="max-w-screen-xl mx-auto px-6 sm:px-10 py-24 sm:py-32">
+
+    <div class="grid grid-cols-12 gap-6 sm:gap-10 mb-16">
+      <div class="col-span-12 sm:col-span-3">
+        <div class="index-num text-[11px] tracking-wider text-ink-400">05 — Citación</div>
+      </div>
+      <div class="col-span-12 sm:col-span-9">
+        <h2 class="display font-light text-4xl sm:text-5xl leading-[1.05] tracking-tighter-2 text-ink max-w-2xl">
+          Si este trabajo te resulta <span class="font-serif italic text-ink-700">útil</span>.
+        </h2>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-12 gap-6 sm:gap-10">
+      <div class="col-span-12 sm:col-span-3"></div>
+      <div class="col-span-12 sm:col-span-9">
+        <div class="font-mono text-xs sm:text-sm leading-loose text-ink-700 max-w-3xl whitespace-pre-wrap">@misc{voicecloning_husll_uib_2026,
+  <span class="text-ink-400">author</span>       = "Link Cladera, Marc and Borrás Santos, Andrés
+                  and Contestí Coll, Antonio",
+  <span class="text-ink-400">title</span>        = "Preservación de la identidad vocal del paciente
+                  mediante clonación de voz zero-shot, watermarking y
+                  anti-spoofing en un entorno hospitalario on-premise",
+  <span class="text-ink-400">year</span>         = "2026",
+  <span class="text-ink-400">howpublished</span> = "Candidatura Premios Salut Innova UIB-HLL Son Espases,
+                  4ª edición. Universitat de les Illes Balears, EPS;
+                  Hospital Universitari Son Llàtzer, ORL.",
+  <span class="text-ink-400">note</span>         = "Colaboración clínica: Dra. Amaya Roldán Fidalgo
+                  (FEA ORL, HUSLL · IB-Salut)."
+}</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="max-w-screen-xl mx-auto px-6 sm:px-10 py-16">
+    <div class="grid grid-cols-12 gap-6 sm:gap-10">
+      <div class="col-span-12 sm:col-span-6">
+        <div class="display font-light text-3xl sm:text-4xl tracking-tighter-2 text-ink">Voice Cloning Clínico.</div>
+        <div class="text-xs uppercase tracking-widest-2 text-ink-400 mt-3">UIB · EPS · H. Son Llàtzer · IB-Salut · 2025—2026</div>
+      </div>
+      <div class="col-span-6 sm:col-span-3">
+        <div class="text-[10px] uppercase tracking-widest-2 text-ink-400 mb-3">Licencia</div>
+        <a href="https://github.com/tcontesti/voice_cloning_app/blob/main/LICENSE" class="link-u text-sm text-ink-700 hover:text-ink-900">CC BY-NC 4.0</a>
+        <div class="text-xs text-ink-500 mt-2 leading-relaxed">El material de terceros (modelos open-weight, datasets, AASIST, AudioSeal) conserva su licencia original.</div>
+      </div>
+      <div class="col-span-6 sm:col-span-3">
+        <div class="text-[10px] uppercase tracking-widest-2 text-ink-400 mb-3">Enlaces</div>
+        <div class="space-y-1 text-sm">
+          <a href="https://github.com/tcontesti/voice_cloning_app" class="link-u block text-ink-700 hover:text-ink-900">GitHub</a>
+          <a href="https://github.com/tcontesti/voice_cloning_app/wiki" class="link-u block text-ink-700 hover:text-ink-900">Wiki</a>
+          <a href="https://github.com/tcontesti/voice_cloning_app/blob/main/docs/Resumen_Ejecutivo_VoiceCloning.pdf" class="link-u block text-ink-700 hover:text-ink-900">Resumen ejecutivo</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

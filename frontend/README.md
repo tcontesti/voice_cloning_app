@@ -13,7 +13,7 @@ npm run dev                     # http://localhost:5173
 
 Mientras desarrollas, el backend FastAPI puede correr:
 - En la misma máquina (Docker Compose levantado vía `make up` desde la raíz).
-- En la Spark vía SSH tunnel: `ssh -L 8000:localhost:8000 husll-spark-01`.
+- En la Spark vía SSH tunnel: `ssh -L 8000:localhost:8000 SPARK_USER@SPARK_HOST`.
 - En la Spark vía VPN hospital: ajusta `VITE_API_BASE`.
 
 ## Scripts
