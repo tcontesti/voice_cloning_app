@@ -33,32 +33,29 @@ https://creativecommons.org/licenses/by-nc/4.0/
 
 Scope of this license:
 
-  - The thesis document (LaTeX source in memoria/source/ and compiled PDF
-    memoria/Memoria.pdf) is licensed under CC BY-NC 4.0.
-  - The source code (spark/ worker, scripts and pipeline; the backend
-    and frontend hosted in separate repositories) is licensed under
-    CC BY-NC 4.0 for academic and non-commercial use.
-  - The figures and metric reports (reports/, memoria/source/*.png) that
-    contain no identifiable patient information are licensed under
-    CC BY-NC 4.0.
-  - The original undergraduate material in original-project/ (Memoria
-    v1, scripts and poster by Marc Link Cladera and Antonio Contestí
-    Coll, supervised by Dr. Miquel Miró Nicolau, UIB) is licensed under
-    CC BY-NC 4.0.
-  - Third-party material (datasets NODE21, VinDr-CXR, ChestX-ray14,
-    JSRT, PadChest, Open-I, TBX11K; reference implementations such as
-    the Behrendt et al. NODE21 submission; pre-trained weights from
-    torchvision and Ultralytics) retains its original license. This
-    work only references and evaluates such material; it does not
-    redistribute it.
+  - The source code (backend, frontend, worker, infra, scripts) is
+    licensed under CC BY-NC 4.0 for academic and non-commercial use.
+  - The documentation (docs/, wiki/) and figures that contain no
+    identifiable patient information are licensed under CC BY-NC 4.0.
+  - The thesis or technical memoir, when available in memoria/, is
+    licensed under CC BY-NC 4.0.
+  - Third-party material — pre-trained voice cloning models (e.g.,
+    XTTS-v2 under the Coqui Public Model License), anti-spoofing
+    detectors (e.g., AASIST under its own research license),
+    speech-to-text models (e.g., Whisper under MIT License) and any
+    referenced audio datasets — retains its original license. This
+    work only references, evaluates and integrates such material; it
+    does not redistribute model weights or datasets.
 
 ──────────────────────────────────────────────────────────────────────
 
 Citation:
 
-  Link Cladera, M., & Contestí Coll, A. (2026). Detección automática
-  de nódulos pulmonares en radiografías de tórax mediante deep
-  learning. Final project for the course of Machine Learning, Escola Politècnica Superior,
-  Universitat de les Illes Balears, Palma de Mallorca, Spain.
-  Supervisor: Dr. Miquel Miró Nicolau. Extended in collaboration with
-  Dr. Ana Estremera Bauzá (Hospital Universitari Son Llàtzer).
+  Roldán Fidalgo, A., Link Cladera, M., Borrás Santos, A., &
+  Contestí Coll, A. (2026). Preservación de la identidad vocal del
+  paciente mediante clonación de voz zero-shot, watermarking y
+  anti-spoofing en un entorno hospitalario on-premise. Escola
+  Politècnica Superior, Universitat de les Illes Balears, Palma de
+  Mallorca, Spain. In collaboration with the Servei
+  d'Otorrinolaringologia i Cirurgia de Cap i Coll, Hospital
+  Universitari Son Llàtzer (IB-Salut).
