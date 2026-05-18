@@ -1,6 +1,6 @@
 # voice_cloning_app
 
-Material asociado al proyecto **"Preservación de la identidad vocal del paciente mediante clonación de voz zero-shot, watermarking y anti-spoofing en un entorno hospitalario on-premise"**. Aplicación clínica desarrollada por Marc Link Cladera, Andrés Borrás Santos y Antonio Contestí Coll (graduados en Ingeniería Informática por la Escola Politècnica Superior de la Universitat de les Illes Balears) en colaboración con la Dra. Amaya Roldán Fidalgo (FEA, Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello, Hospital Universitario Son Llàtzer — IB-Salut), bajo el marco del convenio UIB · IB-Salut · FUEIB.
+Material asociado al proyecto **"Preservación de la identidad vocal del paciente mediante clonación de voz zero-shot, watermarking y anti-spoofing en un entorno hospitalario on-premise"**. Aplicación clínica codesarrollada por la Dra. Amaya Roldán Fidalgo (FEA, Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello, Hospital Universitario Son Llàtzer — IB-Salut), Andrés Borrás Santos (graduado en Ingeniería Informática, EPS-UIB), Marc Link Cladera y Antonio Contestí Coll (estudiantes de Ingeniería Informática, EPS-UIB, defensa de TFG prevista para junio 2026), bajo el marco del convenio UIB · IB-Salut · FUEIB.
 
 Candidatura a los **Premios Salut Innova UIB-HLL Son Espases · 4ª edición (2026)**, categoría **IA y big data**.
 
@@ -92,8 +92,8 @@ Los pesos pre-entrenados y los datasets externos (CommonVoice ES, VCTK, MLS, Vox
 
 Proyecto desarrollado bajo el convenio UIB · IB-Salut · FUEIB. Equipo mixto:
 
-- **UIB · Escola Politècnica Superior:** Marc Link Cladera, Andrés Borrás Santos, Antonio Contestí Coll (graduados en Ingeniería Informática).
-- **IB-Salut · Hospital Universitario Son Llàtzer:** Dra. Amaya Roldán Fidalgo (FEA, Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello).
+- **IB-Salut · Hospital Universitario Son Llàtzer:** Dra. Amaya Roldán Fidalgo, FEA del Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello.
+- **UIB · Escola Politècnica Superior:** Andrés Borrás Santos (graduado en Ingeniería Informática); Marc Link Cladera y Antonio Contestí Coll (estudiantes de Ingeniería Informática, defensa de TFG prevista para junio 2026).
 
 La selección de patología y escenarios clínicos, los protocolos de captura de voz residual y la validación perceptiva planificada (escucha ciega con logopedas y otorrinos) se realizan desde el Servicio de ORL del HUSLL. El diseño técnico, la implementación y la auditoría algorítmica se realizan desde la EPS-UIB.
 
@@ -105,25 +105,23 @@ Documento académico y código liberados bajo Creative Commons Attribution-NonCo
 
 ```bibtex
 @misc{voicecloning_husll_uib_2026,
-  author       = {Link Cladera, Marc and Borr\'as Santos, Andr\'es and
-                  Contest\'i Coll, Antonio},
+  author       = {Rold\'an Fidalgo, Amaya and Borr\'as Santos, Andr\'es and
+                  Link Cladera, Marc and Contest\'i Coll, Antonio},
   title        = {Preservaci\'on de la identidad vocal del paciente mediante
                   clonaci\'on de voz zero-shot, watermarking y anti-spoofing
                   en un entorno hospitalario on-premise},
   year         = {2026},
   howpublished = {Candidatura Premios Salut Innova UIB-HLL Son Espases,
-                  4\textsuperscript{a} edici\'on. Universitat de les Illes
-                  Balears, Escola Polit\`ecnica Superior; Hospital
-                  Universitari Son Ll\`atzer, Servei
-                  d'Otorrinolaringologia.},
-  note         = {Colaboraci\'on cl\'inica: Dra. Amaya Rold\'an Fidalgo
-                  (FEA ORL, HUSLL).}
+                  4\textsuperscript{a} edici\'on. Hospital Universitari Son
+                  Ll\`atzer (Servei d'Otorrinolaringologia, IB-Salut);
+                  Universitat de les Illes Balears (Escola Polit\`ecnica
+                  Superior).}
 }
 ```
 
 ## Contacto
 
-- **Antonio Contestí Coll** — `toni.contesti.coll@gmail.com`
-- **Marc Link Cladera** — UIB · EPS
+- **Dra. Amaya Roldán Fidalgo** — Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello, Hospital Universitario Son Llàtzer (IB-Salut)
 - **Andrés Borrás Santos** — UIB · EPS
-- **Colaboración clínica:** Dra. Amaya Roldán Fidalgo — Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello, Hospital Universitario Son Llàtzer (IB-Salut)
+- **Marc Link Cladera** — UIB · EPS
+- **Antonio Contestí Coll** — `toni.contesti.coll@gmail.com` · UIB · EPS

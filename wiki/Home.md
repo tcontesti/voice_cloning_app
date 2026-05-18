@@ -2,8 +2,11 @@
 
 Material asociado al proyecto **"Preservación de la identidad vocal del paciente mediante clonación de voz zero-shot, watermarking y anti-spoofing en un entorno hospitalario on-premise"**, desarrollado en el marco del convenio UIB · IB-Salut · FUEIB y presentado a los **Premios Salut Innova UIB-HLL Son Espases · 4ª edición (2026)**, categoría *IA y big data*.
 
-- **Equipo UIB:** Marc Link Cladera, Andrés Borrás Santos, Antonio Contestí Coll — graduados en Ingeniería Informática, Escola Politècnica Superior, Universitat de les Illes Balears
-- **Colaboración clínica:** Dra. Amaya Roldán Fidalgo — FEA, Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello, Hospital Universitario Son Llàtzer (IB-Salut)
+- **Coautores (equipo mixto):**
+  - Dra. Amaya Roldán Fidalgo — FEA, Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello, Hospital Universitario Son Llàtzer (IB-Salut)
+  - Andrés Borrás Santos — graduado en Ingeniería Informática, EPS-UIB
+  - Marc Link Cladera — estudiante de Ingeniería Informática, EPS-UIB (TFG previsto para junio 2026)
+  - Antonio Contestí Coll — estudiante de Ingeniería Informática, EPS-UIB (TFG previsto para junio 2026)
 - **Marco:** Convenio UIB · IB-Salut · FUEIB
 
 ## Resumen ejecutivo

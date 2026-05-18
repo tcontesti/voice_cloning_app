@@ -59,17 +59,16 @@ Controles defensivos en el código:
 
 ```bibtex
 @misc{voicecloning_husll_uib_2026,
-  author       = {Link Cladera, Marc and Borr\'as Santos, Andr\'es and
-                  Contest\'i Coll, Antonio},
+  author       = {Rold\'an Fidalgo, Amaya and Borr\'as Santos, Andr\'es and
+                  Link Cladera, Marc and Contest\'i Coll, Antonio},
   title        = {Preservaci\'on de la identidad vocal del paciente mediante
                   clonaci\'on de voz zero-shot, watermarking y anti-spoofing
                   en un entorno hospitalario on-premise},
   year         = {2026},
   howpublished = {Candidatura Premios Salut Innova UIB-HLL Son Espases,
-                  4\textsuperscript{a} edici\'on. Universitat de les Illes
-                  Balears, Escola Polit\`ecnica Superior; Hospital
-                  Universitari Son Ll\`atzer, Servei d'Otorrinolaringologia.},
-  note         = {Colaboraci\'on cl\'inica: Dra. Amaya Rold\'an Fidalgo
-                  (FEA ORL, HUSLL).}
+                  4\textsuperscript{a} edici\'on. Hospital Universitari Son
+                  Ll\`atzer (Servei d'Otorrinolaringologia, IB-Salut);
+                  Universitat de les Illes Balears (Escola Polit\`ecnica
+                  Superior).}
 }
 ```

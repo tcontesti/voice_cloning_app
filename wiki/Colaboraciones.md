@@ -4,23 +4,11 @@
 
 El proyecto cumple por construcción el criterio de **Cooperación UIB · IB-Salut (10 %)** de los Premios Salut Innova UIB-HLL Son Espases 2026. El equipo combina ingeniería y desarrollo desde la Universitat de les Illes Balears con liderazgo clínico desde el Hospital Universitario Son Llàtzer, en el marco del convenio UIB · IB-Salut · FUEIB.
 
-## Equipo UIB · Escola Politècnica Superior
+## Equipo coautor
 
-- **Marc Link Cladera** — graduado en Ingeniería Informática (UIB · EPS).
-- **Andrés Borrás Santos** — graduado en Ingeniería Informática (UIB · EPS).
-- **Antonio Contestí Coll** — graduado en Ingeniería Informática (UIB · EPS). `toni.contesti.coll@gmail.com`.
+El proyecto está codesarrollado por cuatro coautores con responsabilidades complementarias y paritarias:
 
-Responsabilidades técnicas:
-- Diseño de la arquitectura cliente-servidor (Vue 3, FastAPI, Celery, MinIO, Postgres, RabbitMQ, Redis, Vault).
-- Implementación de los adaptadores de modelo (Chatterbox, OmniVoice, Qwen3-TTS, ElevenLabs).
-- Postproceso watermark (PerTh + AudioSeal) y anti-spoofing (AASIST).
-- Audit log append-only con cadena de hashes SHA-256 y endpoint de verificación.
-- Benchmark reproducible: 528 generaciones, decision gates, hallazgos overnight.
-- Empaquetado Docker Compose (PC + Spark) y Helm chart (Kubernetes).
-- Observabilidad: Prometheus + Grafana + Loki.
-- Pruebas de carga (Locust), pruebas unitarias (pytest), pruebas de UI manuales con CHECKLIST.
-
-## Colaboración clínica · Hospital Universitario Son Llàtzer (IB-Salut)
+### Liderazgo clínico · Hospital Universitario Son Llàtzer (IB-Salut)
 
 - **Dra. Amaya Roldán Fidalgo** — Facultativo Especialista de Área (FEA), Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello.
 
@@ -31,6 +19,22 @@ Responsabilidades clínicas:
 - Supervisión del consentimiento informado específico para clonación, distinto del consentimiento de grabación.
 - Coordinación con consultas de Logopedia, Rehabilitación y Cirugía Maxilofacial / Cabeza y Cuello.
 - Planificación de la fase de escucha ciega clínica (pendiente de aprobación por Comité de Ética).
+
+### Liderazgo técnico · UIB · Escola Politècnica Superior
+
+- **Andrés Borrás Santos** — graduado en Ingeniería Informática (UIB · EPS).
+- **Marc Link Cladera** — estudiante de Ingeniería Informática (UIB · EPS), defensa de TFG prevista para junio de 2026.
+- **Antonio Contestí Coll** — estudiante de Ingeniería Informática (UIB · EPS), defensa de TFG prevista para junio de 2026. `toni.contesti.coll@gmail.com`.
+
+Responsabilidades técnicas:
+- Diseño de la arquitectura cliente-servidor (Vue 3, FastAPI, Celery, MinIO, Postgres, RabbitMQ, Redis, Vault).
+- Implementación de los adaptadores de modelo (Chatterbox, OmniVoice, Qwen3-TTS, ElevenLabs).
+- Postproceso watermark (PerTh + AudioSeal) y anti-spoofing (AASIST).
+- Audit log append-only con cadena de hashes SHA-256 y endpoint de verificación.
+- Benchmark reproducible: 528 generaciones, decision gates, hallazgos overnight.
+- Empaquetado Docker Compose (PC + Spark) y Helm chart (Kubernetes).
+- Observabilidad: Prometheus + Grafana + Loki.
+- Pruebas de carga (Locust), pruebas unitarias (pytest), pruebas de UI manuales con CHECKLIST.
 
 ## Marco institucional · Convenio UIB · IB-Salut · FUEIB
 
