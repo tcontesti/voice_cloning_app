@@ -24,7 +24,7 @@ Responsabilidades clínicas:
 
 - **Andrés Borrás Santos** — graduado en Ingeniería Informática (UIB · EPS).
 - **Marc Link Cladera** — estudiante de Ingeniería Informática (UIB · EPS), defensa de TFG prevista para junio de 2026.
-- **Antonio Contestí Coll** — estudiante de Ingeniería Informática (UIB · EPS), defensa de TFG prevista para junio de 2026. `toni.contesti.coll@gmail.com`.
+- **Antonio Contestí Coll** — estudiante de Ingeniería Informática (UIB · EPS), defensa de TFG prevista para junio de 2026; Técnico de Gestión de Sistemas y Tecnologías de las Telecomunicaciones, Hospital Universitario Son Llàtzer (IB-Salut). `toni.contesti.coll@gmail.com`.
 
 Responsabilidades técnicas:
 - Diseño de la arquitectura cliente-servidor (Vue 3, FastAPI, Celery, MinIO, Postgres, RabbitMQ, Redis, Vault).

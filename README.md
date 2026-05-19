@@ -93,7 +93,7 @@ Los pesos pre-entrenados y los datasets externos (CommonVoice ES, VCTK, MLS, Vox
 Proyecto desarrollado bajo el convenio UIB · IB-Salut · FUEIB. Equipo mixto:
 
 - **IB-Salut · Hospital Universitario Son Llàtzer:** Dra. Amaya Roldán Fidalgo, FEA del Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello.
-- **UIB · Escola Politècnica Superior:** Andrés Borrás Santos (graduado en Ingeniería Informática); Marc Link Cladera y Antonio Contestí Coll (estudiantes de Ingeniería Informática, defensa de TFG prevista para junio 2026).
+- **UIB · Escola Politècnica Superior:** Andrés Borrás Santos (graduado en Ingeniería Informática); Marc Link Cladera y Antonio Contestí Coll (estudiantes de Ingeniería Informática, defensa de TFG prevista para junio 2026). Antonio Contestí Coll ejerce además como Técnico de Gestión de Sistemas y Tecnologías de las Telecomunicaciones del Hospital Universitario Son Llàtzer.
 
 La selección de patología y escenarios clínicos, los protocolos de captura de voz residual y la validación perceptiva planificada (escucha ciega con logopedas y otorrinos) se realizan desde el Servicio de ORL del HUSLL. El diseño técnico, la implementación y la auditoría algorítmica se realizan desde la EPS-UIB.
 

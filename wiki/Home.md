@@ -6,7 +6,7 @@ Material asociado al proyecto **"Preservación de la identidad vocal del pacient
   - Dra. Amaya Roldán Fidalgo — FEA, Servicio de Otorrinolaringología y Cirugía de Cabeza y Cuello, Hospital Universitario Son Llàtzer (IB-Salut)
   - Andrés Borrás Santos — graduado en Ingeniería Informática, EPS-UIB
   - Marc Link Cladera — estudiante de Ingeniería Informática, EPS-UIB (TFG previsto para junio 2026)
-  - Antonio Contestí Coll — estudiante de Ingeniería Informática, EPS-UIB (TFG previsto para junio 2026)
+  - Antonio Contestí Coll — estudiante de Ingeniería Informática, EPS-UIB (TFG previsto para junio 2026); Técnico de Gestión de Sistemas y Tecnologías de las Telecomunicaciones, HUSL (IB-Salut)
 - **Marco:** Convenio UIB · IB-Salut · FUEIB
 
 ## Resumen ejecutivo
